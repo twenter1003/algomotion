@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "check": "node scripts/check-problems.ts",
+    "check": "node --test 'tests/**/*.test.ts' && node scripts/check-problems.ts",
     "preview": "vite preview"
   },
   "dependencies": {
