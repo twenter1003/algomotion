@@ -13,7 +13,7 @@ interface RaceBoardProps {
   workUnit: string;
 }
 
-// 작은 판 하나: 박자마다 다음 단계의 끝난 장면으로 부드럽게 넘어가고, 마지막 단계에 닿으면 '끝!' 도장
+// 작은 판 하나: 박자마다 다음 단계의 끝난 장면으로 부드럽게 넘어가고, 마지막 단계에 닿으면 머리에 '끝!' 도장(판을 가리지 않게)
 const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, tick, workUnit }) => {
   const stageRef = useRef<Stage | null>(null);
   const last = viz.steps.length - 1;
@@ -28,12 +28,15 @@ const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, tick, workUnit }) 
 
   return (
     <article className="race-card">
-      <h2 className="race-head">
-        <ApproachLabel approach={approach} />
-      </h2>
+      <div className="race-head">
+        <h2 className="race-title">
+          <ApproachLabel approach={approach} />
+        </h2>
+        {/* 자리는 늘 잡아 두어 도장이 찍힐 때 머리 줄이 바뀌거나 판이 밀리지 않게 */}
+        <span className={index === last ? 'race-stamp is-done' : 'race-stamp'}>끝!</span>
+      </div>
       <div className="race-visual">
         <StageView scene={viz.initial} stageRef={stageRef} maxScale={1} />
-        {index === last && <span className="race-stamp">끝!</span>}
       </div>
       <p className="race-foot">
         <span>

@@ -175,6 +175,13 @@
   margin-left: 8px;
 }
 
+/* 아무 상태도 아닌 막대(plain, muted)의 채움은 바탕(--inset)과 구별되는 연필 회색, 글자는 그 위에서도 읽히게 진하게 */
+.it-bar.tone-plain,
+.it-bar.tone-muted {
+  --bg: var(--line-strong);
+  --fg: var(--ink);
+}
+
 .it-zone {
   border: 1.5px dashed var(--line-strong);
   border-radius: 10px;
