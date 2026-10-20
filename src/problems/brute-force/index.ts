@@ -11,4 +11,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'archery': () => import('./archery.ts').then((m) => m.default),
   'emoticon-sale': () => import('./emoticon-sale.ts').then((m) => m.default),
   'maximize-expression': () => import('./maximize-expression.ts').then((m) => m.default),
+  'menu-renewal': () => import('./menu-renewal.ts').then((m) => m.default),
 };
