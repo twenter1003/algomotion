@@ -11,4 +11,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'delivery-pickup': () => import('./delivery-pickup.ts').then((m) => m.default),
   interception: () => import('./interception.ts').then((m) => m.default),
   'number-game': () => import('./number-game.ts').then((m) => m.default),
+  'magic-elevator': () => import('./magic-elevator.ts').then((m) => m.default),
 };
