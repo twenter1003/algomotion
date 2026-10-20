@@ -9,4 +9,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'vowel-dictionary': () => import('./vowel-dictionary.ts').then((m) => m.default),
   'n-queen': () => import('./n-queen.ts').then((m) => m.default),
   'archery': () => import('./archery.ts').then((m) => m.default),
+  'emoticon-sale': () => import('./emoticon-sale.ts').then((m) => m.default),
 };
