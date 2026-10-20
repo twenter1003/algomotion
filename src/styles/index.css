@@ -22,6 +22,7 @@
   --pen-dark: #1a3daa;
   --pen-tint: #e8eeff;
   --red-pen: #c92a2a;
+  --red-tint: #fdecec; /* 함정 풀이의 평가 상자 */
   --green-ink: #1f7a4d;
 
   /* 형광펜: 알고리즘 상태 */
@@ -34,6 +35,8 @@
   --hl-orange: #ffd0a1; /* 부족 */
   --hl-orange-line: #e0a066;
   --hl-line: #fff1a6; /* 실행 중인 코드 줄, 바뀐 변수 */
+  --trail-line: #e2c84a; /* DFS가 밟고 있는 길(--hl-line 칸)의 테두리 */
+  --path-line: #d6336c; /* 정답 경로 선 */
   --hl-note: #fff8d6;
   --wall: repeating-linear-gradient(135deg, var(--ink) 0 2px, #e9eef5 2px 8px);
 
@@ -1782,6 +1785,535 @@ code.info-pill {
 }
 
 /* ==========================================================================
+   문제 화면
+   가운데 칸: 문제 머리 → 풀이 탭 → 재생(또는 나란히 비교) → 평가 → 한눈에 비교
+   오른쪽 칸: 코드, 변수, 복잡도. 1280px 이상은 한 화면에 고정하고 칸마다 따로 스크롤합니다.
+   ========================================================================== */
+
+.problem-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'main'
+    'code';
+  gap: 12px;
+  padding: 12px 12px 24px;
+}
+
+.problem-main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* 칸이 따로 스크롤할 때 재생 화면 같은 칸이 줄어들지 않게 */
+.problem-main > * {
+  flex: none;
+}
+
+/* 날아가는 토큰이 판 위로 살짝 넘어가도 잘리지 않게 */
+.problem-page .player .stage {
+  overflow: visible;
+}
+
+.problem-page .code-view {
+  max-height: 520px;
+}
+
+@media (min-width: 900px) {
+  .problem-page {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-areas: 'main code';
+    align-items: start;
+    gap: 16px;
+    padding: 16px 24px 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .problem-page {
+    height: 100vh;
+    height: 100dvh;
+    align-items: stretch;
+  }
+
+  /* 칸 가장자리에서 초점 테두리(2px + 간격 2px)가 잘리지 않게 안쪽 여백 4px */
+  .problem-main,
+  .problem-page .code-panel {
+    min-height: 0;
+    padding: 4px;
+    overflow-y: auto;
+  }
+
+  .problem-page .code-card {
+    flex: 1 1 auto;
+    min-height: 240px;
+  }
+
+  .problem-page .code-view {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .problem-page .vars-card {
+    flex: none;
+  }
+}
+
+/* --- 문제 머리 --- */
+
+.problem-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.problem-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: stretch;
+  gap: 6px 10px;
+}
+
+.problem-head .problem-title {
+  font-size: 22px;
+}
+
+.back-link {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.problem-head .source-link {
+  margin-left: auto;
+}
+
+.problem-details {
+  align-self: stretch;
+}
+
+.problem-details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--sheet);
+  font-size: 13.5px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.problem-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.problem-details > summary:hover {
+  border-color: var(--line-strong);
+}
+
+.details-chevron {
+  color: var(--ink-3);
+  transition: transform 0.2s;
+}
+
+.problem-details[open] .details-chevron {
+  transform: rotate(90deg);
+}
+
+.problem-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 10px;
+  padding: 18px 20px;
+}
+
+/* --- 풀이 탭 --- */
+
+.approach-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.approach-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.approach-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--sheet);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.approach-tab:hover {
+  border-color: var(--line-strong);
+}
+
+.approach-tab[aria-selected='true'] {
+  border-color: var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--ink);
+}
+
+/* 빨간펜 표시 + '정석 · 이름': 풀이 탭, 경주 판 머리, 비교 막대가 같이 씀 */
+.approach-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.approach-label .grade-mark {
+  width: 1.6em;
+  height: 1.6em;
+}
+
+.approach-label .rank-label {
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+/* --- 빨간펜 표시, 평가 이유, 장단점 (옛 풀이 비교 화면에서 옮겨 옴) --- */
+
+.grade-mark {
+  flex: none;
+  color: var(--red-pen);
+}
+
+.rank-label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rank-label.rank-best {
+  color: var(--green-ink);
+}
+
+.rank-label.rank-alternative {
+  color: var(--pen-dark);
+}
+
+.rank-label.rank-trap {
+  color: var(--red-pen);
+}
+
+.metric-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--inset);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.metric-chip code {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.why-box {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--hl-note);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.why-box strong {
+  margin-right: 8px;
+  font-weight: 700;
+}
+
+.why-box.rank-trap {
+  background: var(--red-tint);
+}
+
+.pros-cons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+}
+
+.pros-cons-title {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pros-cons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.pros-cons-list li::marker {
+  color: var(--line-strong);
+}
+
+/* --- 고른 풀이의 평가 --- */
+
+.approach-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.notes-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.notes-verdict {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* --- 나란히 비교 --- */
+
+.race {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px 16px;
+}
+
+.race-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.race-input {
+  color: var(--ink-3);
+  font: 500 12.5px/1.5 var(--font-mono);
+}
+
+.race-boards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.race-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--sheet);
+}
+
+.race-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.race-visual {
+  position: relative;
+  display: flex;
+  padding: 14px 10px 12px;
+  background-color: var(--code-bg);
+  background-image: var(--grid-paper);
+  background-size: 18px 18px;
+}
+
+/* 끝난 판에 찍는 빨간펜 도장 */
+.race-stamp {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 9;
+  padding: 0 8px;
+  border: 2px solid var(--red-pen);
+  border-radius: 8px;
+  background: var(--sheet);
+  color: var(--red-pen);
+  font: 400 24px/1.3 var(--font-pen);
+  transform: rotate(-8deg);
+}
+
+.race-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+  padding: 9px 12px 11px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 899px) {
+  .race-boards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- 한눈에 비교 막대 --- */
+
+.compare-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px 18px;
+}
+
+.bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 13.5px;
+}
+
+.bar-name {
+  min-width: 0;
+  color: var(--ink-2);
+}
+
+.bar-row.is-active .bar-name {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.bar-track {
+  position: relative;
+  height: 24px;
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+
+.bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: var(--r-sm);
+}
+
+.bar-fill.rank-best {
+  border: 1px solid var(--hl-green-line);
+  background: var(--hl-green);
+}
+
+.bar-fill.rank-alternative {
+  border: 1px solid var(--pen);
+  background: var(--hl-blue);
+}
+
+.bar-fill.rank-trap {
+  border: 1px solid var(--hl-pink-line);
+  background: var(--hl-pink);
+}
+
+.bar-value {
+  position: relative;
+  padding-left: 8px;
+  color: var(--ink);
+  font: 600 12.5px/24px var(--font-sans);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-chip {
+  padding: 2px 9px;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.result-chip.is-right {
+  background: var(--hl-green);
+  color: var(--green-ink);
+}
+
+.result-chip.is-wrong {
+  background: var(--hl-orange);
+  color: var(--red-pen);
+}
+
+/* --- 코드 칸 --- */
+
+.vars-empty {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+@media (max-width: 559px) {
+  .problem-head .source-link {
+    margin-left: 0;
+  }
+
+  .pros-cons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bar-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bar-name {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
    풀이 비교 화면
    ========================================================================== */
 
@@ -1848,11 +2380,6 @@ code.info-pill {
   box-shadow: inset 0 0 0 1px var(--ink);
 }
 
-.grade-mark {
-  flex: none;
-  color: var(--red-pen);
-}
-
 .approach-card-body {
   display: flex;
   flex-direction: column;
@@ -1875,23 +2402,6 @@ code.info-pill {
 .approach-complexity {
   color: var(--ink-2);
   font: 500 12.5px var(--font-mono);
-}
-
-.rank-label {
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.rank-label.rank-best {
-  color: var(--green-ink);
-}
-
-.rank-label.rank-alternative {
-  color: var(--pen-dark);
-}
-
-.rank-label.rank-trap {
-  color: var(--red-pen);
 }
 
 .approach-detail {
@@ -1921,72 +2431,6 @@ code.info-pill {
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.01em;
-}
-
-.metric-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.metric-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--inset);
-  color: var(--ink-2);
-  font-size: 12.5px;
-}
-
-.metric-chip code {
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.why-box {
-  padding: 14px 16px;
-  border-radius: var(--r-md);
-  background: var(--hl-note);
-  font-size: 14.5px;
-  line-height: 1.7;
-}
-
-.why-box strong {
-  margin-right: 8px;
-  font-weight: 700;
-}
-
-.why-box.rank-trap {
-  background: #fdecec;
-}
-
-.pros-cons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 24px;
-}
-
-.pros-cons-title {
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.pros-cons-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-left: 18px;
-  color: var(--ink-2);
-  font-size: 13.5px;
-  line-height: 1.65;
-}
-
-.pros-cons-list li::marker {
-  color: var(--line-strong);
 }
 
 .code-block {
@@ -2247,8 +2691,7 @@ kbd {
     padding: 12px 12px 24px;
   }
 
-  .compare-layout,
-  .pros-cons {
+  .compare-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 

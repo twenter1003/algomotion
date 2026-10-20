@@ -1,28 +1,41 @@
 import React from 'react';
 import { Check, Copy } from 'lucide-react';
-import type { AlgorithmStep, Language, Problem } from '../types';
+import type { Language } from '../engine/model';
 import { highlight, LANGUAGES } from './highlight';
 
+type Variables = Record<string, string | number>;
+
 interface CodePanelProps {
-  problem: Problem;
-  step: AlgorithmStep;
-  prevVariables?: AlgorithmStep['variables'];
+  code: Record<Language, string>;
+  activeLines: Record<Language, number[]> | null; // null이면 하이라이트 없음
+  variables: Variables;
+  prevVariables?: Variables; // 앞서 보인 값. 값이 달라진 변수에 '바뀜'을 단다
+  complexity: { time: string; space: string };
   language: Language;
-  onLanguageChange: (lang: Language) => void;
+  onLanguageChange: (l: Language) => void;
 }
 
-export const CodePanel: React.FC<CodePanelProps> = ({ problem, step, prevVariables, language, onLanguageChange }) => {
+const NO_LINES: number[] = [];
+
+export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variables, prevVariables, complexity, language, onLanguageChange }) => {
   const [copied, setCopied] = React.useState(false);
   const codeRef = React.useRef<HTMLPreElement>(null);
-  const activeLines = step.codeHighlights[language];
-  const code = problem.code[language];
+  const lines = activeLines?.[language] ?? NO_LINES;
+  const text = code[language];
+  const entries = Object.entries(variables);
+
+  // 다른 풀이나 언어의 코드로 바뀌면 맨 위부터 보입니다.
+  React.useLayoutEffect(() => {
+    codeRef.current?.scrollTo({ top: 0 });
+  }, [text]);
 
   // 실행 중인 줄 묶음이 코드 상자 밖에 있으면 상자 안에서만 스크롤합니다(페이지는 움직이지 않음).
   React.useEffect(() => {
     const box = codeRef.current;
-    const first = box?.querySelector<HTMLElement>(`[data-line="${Math.min(...activeLines)}"]`);
-    const last = box?.querySelector<HTMLElement>(`[data-line="${Math.max(...activeLines)}"]`);
-    if (!box || !first || !last) return;
+    if (!box || !lines.length) return;
+    const first = box.querySelector<HTMLElement>(`[data-line="${Math.min(...lines)}"]`);
+    const last = box.querySelector<HTMLElement>(`[data-line="${Math.max(...lines)}"]`);
+    if (!first || !last) return;
     const top = first.offsetTop;
     const bottom = last.offsetTop + last.offsetHeight;
     if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) {
@@ -31,11 +44,11 @@ export const CodePanel: React.FC<CodePanelProps> = ({ problem, step, prevVariabl
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       box.scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
     }
-  }, [activeLines]);
+  }, [lines]);
 
   const copyCode = () => {
     navigator.clipboard
-      .writeText(code)
+      .writeText(text)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -68,18 +81,14 @@ export const CodePanel: React.FC<CodePanelProps> = ({ problem, step, prevVariabl
 
         <pre className="code-view" ref={codeRef}>
           <code>
-            {code.split('\n').map((text, idx) => {
+            {text.split('\n').map((line, idx) => {
               const lineNo = idx + 1;
               return (
-                <span
-                  key={lineNo}
-                  data-line={lineNo}
-                  className={`code-line${activeLines.includes(lineNo) ? ' is-active' : ''}`}
-                >
+                <span key={lineNo} data-line={lineNo} className={`code-line${lines.includes(lineNo) ? ' is-active' : ''}`}>
                   <span className="line-no" aria-hidden="true">
                     {lineNo}
                   </span>
-                  <span className="line-text">{highlight(text, language)}</span>
+                  <span className="line-text">{highlight(line, language)}</span>
                 </span>
               );
             })}
@@ -89,30 +98,35 @@ export const CodePanel: React.FC<CodePanelProps> = ({ problem, step, prevVariabl
 
       <section className="panel vars-card" aria-label="변수">
         <h2 className="section-title">변수</h2>
-        <dl className="var-list">
-          {Object.entries(step.variables).map(([name, value]) => {
-            const changed = prevVariables !== undefined && String(prevVariables[name]) !== String(value);
-            return (
-              <div key={name} className={`var-row${changed ? ' is-changed' : ''}`}>
-                <dt>{name}</dt>
-                <dd>
-                  <span className="var-value">{String(value)}</span>
-                  {changed && <span className="var-flag">바뀜</span>}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
+        {entries.length ? (
+          <dl className="var-list">
+            {entries.map(([name, value]) => {
+              // 앞서 보이지 않던 변수는 '바뀜'이 아니다(시작 전이나 다른 풀이에서 넘어온 첫 단계)
+              const changed = prevVariables !== undefined && name in prevVariables && String(prevVariables[name]) !== String(value);
+              return (
+                <div key={name} className={`var-row${changed ? ' is-changed' : ''}`}>
+                  <dt>{name}</dt>
+                  <dd>
+                    <span className="var-value">{String(value)}</span>
+                    {changed && <span className="var-flag">바뀜</span>}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        ) : (
+          <p className="vars-empty">재생 화면에서 단계를 진행하면 변수 값이 보입니다.</p>
+        )}
       </section>
 
       <section className="panel complexity-card" aria-label="복잡도">
         <div className="metric">
           <span className="metric-label">시간 복잡도</span>
-          <span className="metric-value">{problem.timeComplexity}</span>
+          <span className="metric-value">{complexity.time}</span>
         </div>
         <div className="metric">
           <span className="metric-label">공간 복잡도</span>
-          <span className="metric-value">{problem.spaceComplexity}</span>
+          <span className="metric-value">{complexity.space}</span>
         </div>
       </section>
     </aside>
