@@ -729,7 +729,8 @@ a:hover {
    문제 화면
    왼쪽 칸: 문제 목록(옆 메뉴). 1280px 미만은 '☰ 문제 목록'으로 여는 서랍
    가운데 칸: 제목 → 문제 보기 → 풀이 탭 → 재생(또는 나란히 비교) → 평가 → 한눈에 비교
-   오른쪽 칸: 코드, 변수, 복잡도. 1280px 이상은 한 화면에 고정하고 칸마다 따로 스크롤합니다.
+   오른쪽 칸: 코드, 변수, 복잡도. 900px 이상은 한 화면에 고정하고 칸마다 따로 스크롤합니다.
+   900px 미만은 한 줄로 쌓고 창 전체가 스크롤합니다.
    '☰ 문제 목록', 경로, 이전/다음 문제는 앱 머리줄에 붙습니다.
    ========================================================================== */
 
@@ -764,18 +765,9 @@ a:hover {
   max-height: 520px;
 }
 
+/* 900px 이상: 가운데 칸 | 코드 칸. 앱 머리줄 밑을 문제 화면이 채우고 칸마다 따로 스크롤한다.
+   재생 화면(마디 표시줄, 판, 자막, 조작부)이 한 화면에 들어가게 여백과 간격을 줄인다 */
 @media (min-width: 900px) {
-  .problem-page {
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
-    grid-template-areas: 'main code';
-    align-items: start;
-    gap: 16px;
-    padding: 16px 24px 24px;
-  }
-}
-
-@media (min-width: 1280px) {
-  /* 앱 머리줄 밑을 문제 화면이 채운다. 재생 화면이 한 화면에 들어갈 높이를 남기려고 여백과 간격을 줄인다 */
   .app.is-problem {
     height: 100vh;
     height: 100dvh;
@@ -784,14 +776,11 @@ a:hover {
   .problem-page {
     flex: 1 1 auto;
     min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
     grid-template-rows: minmax(0, 1fr);
-    align-items: stretch;
+    grid-template-areas: 'main code';
+    gap: 16px;
     padding: 12px 24px;
-  }
-
-  .problem-page.has-sidebar {
-    grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 380px);
-    grid-template-areas: 'side main code';
   }
 
   /* 칸 가장자리에서 초점 테두리(2px + 간격 2px)가 잘리지 않게 안쪽 여백 4px */
@@ -806,7 +795,8 @@ a:hover {
     gap: 12px;
   }
 
-  /* 풀이 탭은 한 줄에 같은 폭으로 두고, 이름이 길면 탭 안에서 줄을 바꾼다(옆 메뉴로 가운데 칸이 좁아져도 탭이 여러 줄로 쌓이지 않게) */
+  /* 풀이 탭은 한 줄에 같은 폭으로 두고, 이름이 길면 탭 안에서 줄을 바꾼다(옆 메뉴로 가운데 칸이 좁아져도 탭이 여러 줄로 쌓이지 않게).
+     그래도 탭 하나가 9.5rem보다 좁아지는 칸(900px 언저리)에서는 이름이 잘리지 않게 두 줄로 나눈다 */
   .problem-page .approach-bar {
     flex-wrap: nowrap;
   }
@@ -814,7 +804,7 @@ a:hover {
   .problem-page .approach-tabs {
     flex: 1 1 auto;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   }
 
   .problem-page .code-card {
@@ -844,6 +834,20 @@ a:hover {
     bottom: -4px;
     z-index: 10;
     background: var(--sheet);
+  }
+
+  /* 키가 작은 창이라 판이 가장 작은 배율(StageView의 MIN_FIT)에서도 칸에 다 안 들어가면(is-cramped)
+     조작부는 붙여 두지 않는다. 붙이면 처음 위치에서 자막이 조작부 밑에 깔린다 */
+  .problem-page .player:has(.is-cramped) .controls {
+    position: static;
+  }
+}
+
+/* 1280px 이상: 왼쪽에 옆 메뉴 칸이 더해진다(접으면 has-sidebar가 빠진다) */
+@media (min-width: 1280px) {
+  .problem-page.has-sidebar {
+    grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-areas: 'side main code';
   }
 }
 
