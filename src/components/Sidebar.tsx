@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { findProblem, searchCatalog, TIER_NAMES } from '../catalog';
 import type { Category, CategoryId } from '../engine/model';
@@ -7,16 +7,20 @@ import { problemHref } from '../route';
 interface SidebarProps {
   currentId: string;
   seen: Set<string>;
+  query: string;
+  onQueryChange: (query: string) => void;
+  choice: ReadonlyMap<CategoryId, boolean>; // 사용자가 직접 펼치거나 접은 유형
+  onChoose: (id: CategoryId, open: boolean) => void;
   onPick: () => void; // 문제를 골랐을 때(서랍이면 닫는다)
 }
 
 const TIERS = [1, 2, 3] as const;
 
 // 문제 화면 왼쪽 목록(catalog.html 시안 B안): 빈도 단계 → 유형(펼치기/접기) → 문제.
-// 지금 문제의 유형은 처음에 펼쳐 두고, 사용자가 직접 펼치거나 접은 유형은 그 선택을 따른다. 검색 중에는 맞는 유형을 모두 펼친다.
-export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => {
-  const [query, setQuery] = useState('');
-  const [choice, setChoice] = useState<ReadonlyMap<CategoryId, boolean>>(new Map());
+// 지금 문제의 유형은 펼쳐 두고, 사용자가 직접 펼치거나 접은 유형은 그 선택을 따른다. 검색 중에는 맞는 유형을 모두 펼친다.
+// 검색어와 펼침 선택은 ProblemPage가 쥔다(이 목록이 접혔다 펴지거나 서랍과 왼쪽 칸을 오가며 새로 만들어져도 남도록).
+// 다른 문제로 가면 그 문제의 유형은 전에 접었더라도 다시 펼친다(그 정리도 ProblemPage가 한다).
+export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, query, onQueryChange, choice, onChoose, onPick }) => {
   const currentRef = useRef<HTMLAnchorElement>(null);
   const current = findProblem(currentId)?.category.id;
   const q = query.trim();
@@ -36,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => 
         placeholder="문제 찾기"
         aria-label="문제 찾기"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => onQueryChange(e.target.value)}
       />
       {TIERS.map((tier) => {
         const cats = groups.filter((g) => g.category.tier === tier);
@@ -53,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => 
                       type="button"
                       className="side-cat"
                       aria-expanded={open}
-                      onClick={() => setChoice((m) => new Map(m).set(category.id, !open))}
+                      onClick={() => onChoose(category.id, !open)}
                     >
                       <ChevronRight size={15} className="side-chev" aria-hidden="true" />
                       {category.name}
@@ -98,7 +102,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => 
           </div>
         );
       })}
-      {!groups.length && <p className="side-empty">&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</p>}
+      {/* 화면 읽기 프로그램이 바뀐 글을 읽도록 알림 자리는 늘 둔다 */}
+      <p className="side-empty" role="status">
+        {!groups.length && <>&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</>}
+      </p>
     </nav>
   );
 };

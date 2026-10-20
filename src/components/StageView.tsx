@@ -9,7 +9,7 @@ interface StageViewProps {
   maxHeight?: number; // 판이 쓸 수 있는 높이(px). 주면 배율을 높이로도 줄이되 MIN_FIT 밑으로는 줄이지 않는다
 }
 
-const MIN_FIT = 0.6;
+const MIN_FIT = 0.5; // RaceView의 MIN_SIDE_SCALE과 같은 값: 이보다 작은 판은 쓰지 않는다
 
 // Stage를 React에 붙이는 껍데기. 무대 안 DOM은 Stage가 맡고, 여기서는 칸 폭(과 maxHeight)에 맞춰 배율만 정한다.
 export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale, maxHeight }) => {
@@ -38,11 +38,13 @@ export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale,
     return () => observer.disconnect();
   }, []);
 
-  const fit = maxHeight === undefined ? Infinity : Math.max(MIN_FIT, maxHeight / scene.height);
-  const scale = boxWidth ? Math.min(maxScale, boxWidth / scene.width, fit) : 1;
+  const heightFit = maxHeight === undefined ? Infinity : maxHeight / scene.height;
+  const scale = boxWidth ? Math.min(maxScale, boxWidth / scene.width, Math.max(MIN_FIT, heightFit)) : 1;
+  // MIN_FIT 때문에 칸이 준 높이에 다 안 들어가는 판. 붙여 둔 조작부가 자막을 가리지 않게 CSS가 알아야 한다(index.css .is-cramped)
+  const cramped = scale > heightFit;
   return (
     <div className="stage-view" ref={boxRef}>
-      <div className="stage-frame" style={{ width: scene.width * scale, height: scene.height * scale }}>
+      <div className={cramped ? 'stage-frame is-cramped' : 'stage-frame'} style={{ width: scene.width * scale, height: scene.height * scale }}>
         <div ref={hostRef} style={{ transform: `scale(${scale})` }} aria-hidden="true" />
       </div>
     </div>

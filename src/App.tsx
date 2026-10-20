@@ -1,8 +1,12 @@
-import React, { useEffect, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { findProblem } from './catalog';
 import { HomePage } from './components/HomePage';
 import { ProblemPage } from './components/ProblemPage';
 import { parseHash } from './route';
+
+// 뒤로 가기에서 브라우저가 스크롤을 제멋대로 되돌려 놓지 않게 한다. 되돌리는 때가 아래 맨 위 이동보다 앞인지 뒤인지에 따라
+// 홈이 맨 위에서 열리기도 하고 전에 보던 자리에서 열리기도 했다
+history.scrollRestoration = 'manual';
 
 // 주소(해시)를 구독한다. 홈은 #/, 문제는 #/p/<문제 id>. 뒤로 가기와 링크 공유가 그대로 된다
 const watchHash = (onChange: () => void) => {
@@ -21,8 +25,8 @@ export const App: React.FC = () => {
     document.title = title ? `${title} · AlgoMotion` : 'AlgoMotion';
   }, [title]);
 
-  // 다른 화면으로 가면 맨 위부터 보인다(1280px 미만은 창 전체가 스크롤한다)
-  useEffect(() => {
+  // 다른 화면으로 가면 맨 위부터 보인다(홈과 900px 미만의 문제 화면은 창 전체가 스크롤한다). 새 화면이 그려지기 전에 올린다
+  useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [hash]);
 

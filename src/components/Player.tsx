@@ -18,9 +18,9 @@ interface PlayerProps {
 const NO_VARIABLES: Record<string, string | number> = {};
 const IDLE = { step: -1, phase: 0 }; // 연출하는 단계가 없음
 
-// 판이 쓸 수 있는 높이(px). Player가 따로 스크롤하는 칸 안에 있으면(넓은 화면), 칸을 맨 위로 올렸을 때
+// 판이 쓸 수 있는 높이(px). Player가 따로 스크롤하는 칸 안에 있으면(900px 이상), 칸을 맨 위로 올렸을 때
 // Player 위의 것(문제 머리, 풀이 탭)과 Player의 판 아닌 부분(마디 표시줄, 자막, 조작부)을 빼고 남는 높이다.
-// 칸이 따로 스크롤하지 않으면(좁은 화면) 없음. 펼친 '문제 보기'는 접힌 높이로 센다(읽는 동안 판이 줄지 않게).
+// 칸이 따로 스크롤하지 않으면(900px 미만) 없음. 펼친 '문제 보기'는 접힌 높이로 센다(읽는 동안 판이 줄지 않게).
 function fitHeightOf(section: HTMLElement): number | undefined {
   let column = section.parentElement;
   while (column && !/auto|scroll/.test(getComputedStyle(column).overflowY)) column = column.parentElement;
@@ -102,23 +102,25 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     if (s.index === total - 1) latest.current.onFinish?.();
   }, [s.index, total]);
 
-  // 넓은 화면에서는 문제 머리·탭과 판, 자막, 조작부가 한 화면에 들어가게 판 높이를 맞춘다(창 크기나 글꼴이 바뀌면 다시)
-  // ponytail: 처음, 창 크기, 글꼴에서만 잰다. Player 위 내용이 다른 이유로 높이가 바뀌게 되면 ResizeObserver로 지켜본다
+  // 900px 이상에서는 문제 머리·탭과 판, 자막, 조작부가 한 화면에 들어가게 판 높이를 맞춘다.
+  // 처음, 글꼴을 받은 뒤, Player를 담은 칸의 크기가 바뀔 때(창 크기, 옆 메뉴 접기·펴기, 900·1280px 넘나들기) 잰다.
+  // Player 자신은 지켜보지 않는다. 이 칸은 높이가 창에서 정해져 Player 안이 바뀌어도 크기가 그대로이므로,
+  // 재생 중 자막이나 마디 표시줄 높이가 바뀔 때마다 판이 줄었다 늘었다 하지 않는다
   useLayoutEffect(() => {
-    const measure = () => {
-      if (sectionRef.current) setFitHeight(fitHeightOf(sectionRef.current));
-    };
+    const section = sectionRef.current!;
+    const measure = () => setFitHeight(fitHeightOf(section));
     measure();
     document.fonts.ready.then(measure);
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(section.parentElement!);
+    return () => observer.disconnect();
   }, []);
 
-  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않는다.
+  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않고, 창(서랍, 사용법)이 열려 있으면 뒤 화면을 움직이지 않는다.
   // Space는 초점이 있는 버튼·링크·탭·펼치기를 누르는 데 두고(제 동작이 먼저), ←·→·R은 어디서나 듣는다
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || document.querySelector('dialog[open]')) return;
       const target = e.target as HTMLElement | null;
       if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
       if (e.code === 'Space') {

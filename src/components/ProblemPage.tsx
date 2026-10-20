@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { ChevronRight, ExternalLink, X } from 'lucide-react';
 import { findProblem, TIER_NAMES } from '../catalog';
-import type { Language, Problem, ProblemMeta } from '../engine/model';
+import type { CategoryId, Language, Problem, ProblemMeta } from '../engine/model';
 import { progress } from '../progress';
 import { problemHref } from '../route';
 import { ApproachNotes } from './ApproachNotes';
@@ -45,6 +45,28 @@ const Notice: React.FC<{ text: string }> = ({ text }) => (
     <a href="#/">홈으로</a>
   </main>
 );
+
+// 본문 자리의 실패 안내: 문제를 불러오지 못했거나, 그리거나 시각화를 만들다 오류가 났을 때
+const Failed: React.FC<{ meta: ProblemMeta; text: string }> = ({ meta, text }) => (
+  <div className="problem-main">
+    <ProblemHead meta={meta} />
+    <p role="alert">{text}</p>
+    <a href="#/">홈으로</a>
+  </div>
+);
+
+// 본문에서 난 오류가 앱 전체를 비우지 않게 본문 자리에서만 알린다(옆 메뉴와 머리줄은 그대로). 문제가 바뀌면 key로 새로 시작한다
+class BodyBoundary extends React.Component<{ meta: ProblemMeta; children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? <Failed meta={this.props.meta} text="문제를 보여 주지 못했습니다." /> : this.props.children;
+  }
+}
 
 // 좁은 화면의 옆 메뉴. 네이티브 <dialog>가 포커스 가두기, Esc 닫기, 배경 처리를 맡는다(GuideModal과 같은 방식)
 const Drawer: React.FC<{ open: boolean; onClose: () => void; children: React.ReactNode }> = ({ open, onClose, children }) => {
@@ -103,15 +125,36 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
   const wide = useSyncExternalStore(watchWide, isWide);
   const [collapsed, setCollapsed] = useState(false); // 넓은 화면에서 옆 메뉴를 접었는지
   const [drawerOpen, setDrawerOpen] = useState(false);
+  if (wide && drawerOpen) setDrawerOpen(false); // 넓어지면 서랍은 닫힌 것으로 둔다(다시 좁아져도 저절로 열리지 않게)
   const [seen, setSeen] = useState(() => progress.seen());
+  // 옆 메뉴의 검색어와 유형별 펼침 선택. 옆 메뉴는 접으면 사라지고 1280px을 넘나들면 서랍과 왼쪽 칸 사이에서 새로 만들어지므로 여기서 쥔다
+  const [query, setQuery] = useState('');
+  const [choice, setChoice] = useState<ReadonlyMap<CategoryId, boolean>>(new Map());
+  const [shownId, setShownId] = useState(id);
   const found = findProblem(id);
+  // 다른 문제로 가면 그 문제의 유형은 전에 접었더라도 다시 펼친다(옆 메뉴가 닫혀 있는 동안 간 것도). 그리는 중에 바로 고쳐야
+  // 옆 메뉴가 접힌 채 한 번 그려지지 않고, 그 안의 scrollIntoView가 같은 그림에서 지금 문제를 찾는다
+  if (shownId !== id) {
+    setShownId(id);
+    if (found) setChoice((m) => new Map([...m].filter(([categoryId]) => categoryId !== found.category.id)));
+  }
 
   if (!found) return <Notice text="문제를 찾을 수 없습니다." />;
   const { category, meta, index } = found;
   if (!meta.load) return <Notice text="아직 준비 중인 문제입니다." />;
 
   const listShown = wide ? !collapsed : drawerOpen;
-  const sidebar = <Sidebar currentId={id} seen={seen} onPick={() => setDrawerOpen(false)} />;
+  const sidebar = (
+    <Sidebar
+      currentId={id}
+      seen={seen}
+      query={query}
+      onQueryChange={setQuery}
+      choice={choice}
+      onChoose={(categoryId, open) => setChoice((m) => new Map(m).set(categoryId, open))}
+      onPick={() => setDrawerOpen(false)}
+    />
+  );
 
   return (
     <main className={`problem-page${wide && !collapsed ? ' has-sidebar' : ''}`}>
@@ -145,7 +188,9 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
         </Drawer>
       )}
 
-      <ProblemBody key={id} meta={meta} load={meta.load} onSeen={() => setSeen(progress.seen())} />
+      <BodyBoundary key={id} meta={meta}>
+        <ProblemBody meta={meta} load={meta.load} onSeen={() => setSeen(progress.seen())} />
+      </BodyBoundary>
     </main>
   );
 };
@@ -193,15 +238,7 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
   // 세 풀이의 시각화는 한 번만 만든다(탭, 나란히 비교, 비교 막대가 같이 씀)
   const vizs = useMemo(() => problem?.approaches.map((a) => a.visualize()), [problem]);
 
-  if (failed) {
-    return (
-      <div className="problem-main">
-        <ProblemHead meta={meta} />
-        <p role="alert">문제를 불러오지 못했습니다.</p>
-        <a href="#/">홈으로</a>
-      </div>
-    );
-  }
+  if (failed) return <Failed meta={meta} text="문제를 불러오지 못했습니다." />;
   if (!problem || !vizs) {
     return (
       <div className="problem-main">
