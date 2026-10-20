@@ -1786,8 +1786,10 @@ code.info-pill {
 
 /* ==========================================================================
    문제 화면
-   가운데 칸: 문제 머리 → 풀이 탭 → 재생(또는 나란히 비교) → 평가 → 한눈에 비교
+   왼쪽 칸: 문제 목록(옆 메뉴). 1280px 미만은 '☰ 문제 목록'으로 여는 서랍
+   가운데 칸: 제목 → 문제 보기 → 풀이 탭 → 재생(또는 나란히 비교) → 평가 → 한눈에 비교
    오른쪽 칸: 코드, 변수, 복잡도. 1280px 이상은 한 화면에 고정하고 칸마다 따로 스크롤합니다.
+   '☰ 문제 목록', 경로, 이전/다음 문제는 앱 머리줄에 붙습니다.
    ========================================================================== */
 
 .problem-page {
@@ -1798,6 +1800,10 @@ code.info-pill {
     'code';
   gap: 12px;
   padding: 12px 12px 24px;
+}
+
+.problem-page .code-panel {
+  grid-area: code;
 }
 
 .problem-main {
@@ -1833,10 +1839,23 @@ code.info-pill {
 }
 
 @media (min-width: 1280px) {
-  .problem-page {
+  /* 앱 머리줄 밑을 문제 화면이 채운다. 재생 화면이 한 화면에 들어갈 높이를 남기려고 여백과 간격을 줄인다 */
+  .app.is-problem {
     height: 100vh;
     height: 100dvh;
+  }
+
+  .problem-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
+    padding: 12px 24px;
+  }
+
+  .problem-page.has-sidebar {
+    grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-areas: 'side main code';
   }
 
   /* 칸 가장자리에서 초점 테두리(2px + 간격 2px)가 잘리지 않게 안쪽 여백 4px */
@@ -1845,6 +1864,21 @@ code.info-pill {
     min-height: 0;
     padding: 4px;
     overflow-y: auto;
+  }
+
+  .problem-main {
+    gap: 12px;
+  }
+
+  /* 풀이 탭은 한 줄에 같은 폭으로 두고, 이름이 길면 탭 안에서 줄을 바꾼다(옆 메뉴로 가운데 칸이 좁아져도 탭이 여러 줄로 쌓이지 않게) */
+  .problem-page .approach-bar {
+    flex-wrap: nowrap;
+  }
+
+  .problem-page .approach-tabs {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .problem-page .code-card {
@@ -1868,38 +1902,64 @@ code.info-pill {
     overflow: clip;
   }
 
+  /* sticky는 칸의 안쪽 여백(4px)만큼 위에 붙으므로 그만큼 내려 붙여, 조작부 밑으로 판이 비치지 않게 한다 */
   .problem-page .player .controls {
     position: sticky;
-    bottom: 0;
+    bottom: -4px;
     z-index: 10;
     background: var(--sheet);
   }
 }
 
-/* --- 문제 머리 --- */
+/* --- 문제 머리: 제목, 레벨, 원문 링크 --- */
 
 .problem-head {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
 }
 
-.problem-head-row {
+/* --- 앱 머리줄에 붙는 문제 도구: '☰ 문제 목록', 경로, 이전/다음 문제 --- */
+
+.crumbs-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  align-self: stretch;
   gap: 6px 10px;
+}
+
+.crumbs {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.pager {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.head-btn {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.head-btn:disabled {
+  border-color: var(--line-soft);
+  background: var(--inset);
+  color: var(--line-strong);
+}
+
+.list-toggle[aria-expanded='true'] {
+  border-color: var(--pen);
+  background: var(--pen-tint);
+  color: var(--pen-dark);
 }
 
 .problem-head .problem-title {
   font-size: 22px;
-}
-
-.back-link {
-  font-size: 13.5px;
-  font-weight: 500;
 }
 
 .problem-head .source-link {
@@ -2820,4 +2880,534 @@ kbd {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   앱 머리줄, 홈, 옆 메뉴
+   홈은 catalog.html 시안 A안(빈도 단계 → 유형 카드), 옆 메뉴는 B안(빈도 → 유형 → 문제)을 따릅니다.
+   ========================================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* 브랜드 + 화면마다 다는 도구(좁으면 도구가 브랜드 아래 줄로 내려감) */
+.app-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 8px 24px;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-tools {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.app-tools:empty {
+  display: none;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.app-brand:hover {
+  color: var(--ink);
+}
+
+.app-brand .brand-mark {
+  flex: none;
+}
+
+.brand-bg {
+  fill: var(--ink);
+}
+
+.brand-bar {
+  fill: var(--sheet);
+}
+
+.brand-hl {
+  fill: var(--hl-yellow);
+}
+
+.search-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--inset);
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: var(--ink-3);
+}
+
+.seen-mark {
+  flex: none;
+  color: var(--green-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* --- 홈 --- */
+
+.app.is-home {
+  background-image: var(--grid-paper);
+  background-size: 18px 18px;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: min(100%, 1168px);
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+}
+
+.home-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-search {
+  flex: 1 1 260px;
+  max-width: 420px;
+  min-height: 44px;
+  background: var(--sheet);
+}
+
+.resume-link {
+  margin-left: auto;
+  white-space: normal;
+  text-decoration: none;
+}
+
+.resume-link:hover {
+  color: var(--ink);
+}
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tier-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.tier-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* 빈도 단계 이름에 형광펜을 긋습니다 */
+.tier-title span {
+  padding: 0 2px;
+  background: linear-gradient(transparent 55%, var(--hl-yellow) 55%);
+}
+
+.tier[data-tier='2'] .tier-title span {
+  background: linear-gradient(transparent 55%, var(--hl-blue) 55%);
+}
+
+.tier[data-tier='3'] .tier-title span {
+  background: linear-gradient(transparent 55%, var(--hl-green) 55%);
+}
+
+.tier-note {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* 열 수는 카드 수로 나누어떨어지는 것만: 4장은 1·2·4열, 3장은 1·3열, 2장은 1·2열 */
+.cat-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .cat-grid[data-count='2'],
+  .cat-grid[data-count='4'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .cat-grid[data-count='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1140px) {
+  .cat-grid[data-count='4'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.cat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 14px 10px;
+}
+
+.cat-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cat-name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cat-count {
+  color: var(--ink-3);
+  font: 600 12px/1 var(--font-mono);
+  white-space: nowrap;
+}
+
+.cat-idea {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.cat-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-track {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--line-soft);
+}
+
+.cat-fill {
+  display: block;
+  height: 100%;
+  background: var(--green-ink);
+}
+
+.prob-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+/* 문제 줄: 첫 줄에 레벨과 제목, 둘째 줄에 정석 풀이. 제목을 자르지 않고 줄을 바꾼다 */
+.prob-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'lv title mark'
+    '. best mark';
+  align-items: baseline;
+  gap: 0 8px;
+  padding: 7px 4px;
+  border-top: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  word-break: keep-all;
+}
+
+a.prob-row:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.prob-row .level-chip {
+  grid-area: lv;
+}
+
+.prob-title {
+  grid-area: title;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.prob-best {
+  grid-area: best;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.prob-row .seen-mark,
+.soon-tag {
+  grid-area: mark;
+  align-self: center;
+}
+
+/* 준비 중: 흐리게, 누를 수 없음 */
+.prob-row.is-soon {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.prob-row.is-soon .prob-title {
+  font-weight: 500;
+}
+
+.is-soon .level-chip {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink-3);
+}
+
+.soon-tag {
+  padding: 1px 6px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.more-btn {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--pen);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.more-btn:hover {
+  color: var(--pen-dark);
+}
+
+.home-empty {
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+@media (max-width: 559px) {
+  .app-bar {
+    padding: 6px 16px;
+  }
+
+  .home {
+    gap: 24px;
+    padding: 16px 16px 40px;
+  }
+}
+
+/* --- 옆 메뉴 --- */
+
+.sidebar {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--sheet);
+}
+
+.side-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.side-tier-label {
+  padding: 4px 8px 2px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.side-cats,
+.side-list {
+  list-style: none;
+}
+
+.side-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.side-cat:hover {
+  background: var(--inset);
+}
+
+.side-chev {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 0.2s;
+}
+
+.side-cat[aria-expanded='true'] .side-chev {
+  transform: rotate(90deg);
+}
+
+.side-n {
+  margin-left: auto;
+  color: var(--ink-3);
+  font: 600 11.5px/1 var(--font-mono);
+}
+
+.side-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 4px;
+  padding-left: 18px;
+}
+
+.side-p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.35;
+  text-decoration: none;
+  word-break: keep-all;
+}
+
+a.side-p:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.side-p[aria-current='page'] {
+  background: var(--pen-tint);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--pen);
+}
+
+.side-p.is-soon {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.side-p-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.side-empty {
+  padding: 4px 8px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* 1280px 미만: 왼쪽에서 나오는 서랍(네이티브 dialog). 닫힌 dialog는 UA가 숨기므로 열렸을 때만 flex로 둔다 */
+.drawer {
+  inset: 0 auto 0 0;
+  width: min(320px, calc(100% - 48px));
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer::backdrop {
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 6px 0 18px;
+}
+
+.drawer-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.drawer .sidebar {
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
 }
