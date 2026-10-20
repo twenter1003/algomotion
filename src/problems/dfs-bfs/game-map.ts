@@ -125,38 +125,40 @@ def solution(maps):
   const n = maps.length;
   const m = maps[0].length;
   const dist = Array.from({ length: n }, () => Array(m).fill(Infinity));
-  const heap = [[1, 0, 0]]; // [비용, x, y]를 담는 최소 힙
+  const pq = [[1, 0, 0]]; // [비용, x, y]를 담는 최소 힙
   dist[0][0] = 1;
 
+  // [비용, x, y]를 앞에서부터 비교합니다(Python의 튜플 비교와 같은 순서)
+  const less = (a, b) => (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0;
   const push = (item) => {
-    heap.push(item);
-    for (let i = heap.length - 1; i > 0; ) {
+    pq.push(item);
+    for (let i = pq.length - 1; i > 0; ) {
       const p = (i - 1) >> 1;
-      if (heap[p][0] <= heap[i][0]) break;
-      [heap[p], heap[i]] = [heap[i], heap[p]];
+      if (!less(pq[i], pq[p])) break;
+      [pq[p], pq[i]] = [pq[i], pq[p]];
       i = p;
     }
   };
   const pop = () => {
-    const top = heap[0];
-    const last = heap.pop();
-    if (heap.length > 0) {
-      heap[0] = last;
+    const top = pq[0];
+    const last = pq.pop();
+    if (pq.length > 0) {
+      pq[0] = last;
       for (let i = 0; ; ) {
         const l = 2 * i + 1;
         const r = l + 1;
         let min = i;
-        if (l < heap.length && heap[l][0] < heap[min][0]) min = l;
-        if (r < heap.length && heap[r][0] < heap[min][0]) min = r;
+        if (l < pq.length && less(pq[l], pq[min])) min = l;
+        if (r < pq.length && less(pq[r], pq[min])) min = r;
         if (min === i) break;
-        [heap[min], heap[i]] = [heap[i], heap[min]];
+        [pq[min], pq[i]] = [pq[i], pq[min]];
         i = min;
       }
     }
     return top;
   };
 
-  while (heap.length > 0) {
+  while (pq.length > 0) {
     const [cost, x, y] = pop();
     if (cost > dist[x][y]) continue; // 이미 더 짧게 온 적이 있는 칸
     if (x === n - 1 && y === m - 1) return cost;
@@ -173,13 +175,13 @@ def solution(maps):
 }`,
 };
 const DIJKSTRA_AT = {
-  start: lines(DIJKSTRA, ['dist[0][0] = 1', 'pq = [(1, 0, 0)]'], ['const heap = [[1, 0, 0]]', 'dist[0][0] = 1']),
+  start: lines(DIJKSTRA, ['dist[0][0] = 1', 'pq = [(1, 0, 0)]'], ['const pq = [[1, 0, 0]]', 'dist[0][0] = 1']),
   pop: lines(DIJKSTRA, ['cost, x, y = heapq.heappop(pq)'], ['const [cost, x, y] = pop()']),
   look: lines(DIJKSTRA, ['for dx, dy in', 'if 0 <= nx < n', 'if cost + 1 < dist[nx][ny]'], ['for (const [dx, dy] of', 'cost + 1 < dist[nx][ny]']),
   mark: lines(DIJKSTRA, ['for dx, dy in', 'if 0 <= nx < n', 'if cost + 1 < dist[nx][ny]', 'dist[nx][ny] = cost + 1'],
     ['for (const [dx, dy] of', 'cost + 1 < dist[nx][ny]', 'dist[nx][ny] = cost + 1']),
-  push: lines(DIJKSTRA, ['heapq.heappush(pq, (cost + 1, nx, ny))'], ['push([cost + 1, nx, ny])', 'for (let i = heap.length - 1; i > 0; )']),
-  next: lines(DIJKSTRA, ['while pq:'], ['while (heap.length > 0)']),
+  push: lines(DIJKSTRA, ['heapq.heappush(pq, (cost + 1, nx, ny))'], ['push([cost + 1, nx, ny])', 'for (let i = pq.length - 1; i > 0; )']),
+  next: lines(DIJKSTRA, ['while pq:'], ['while (pq.length > 0)']),
   goal: lines(DIJKSTRA, ['if x == n - 1 and y == m - 1', 'return cost'], ['if (x === n - 1 && y === m - 1) return cost']),
 };
 
@@ -291,7 +293,8 @@ const drawPath = (rec: StepRecorder, path: Cell[]) => {
 /* 정석 BFS · 대안 다익스트라: 꺼내기 → 살피기 → 넣기(넣고 정렬)          */
 /* ------------------------------------------------------------------ */
 
-// 가중치가 모두 1이라 두 풀이는 칸을 꺼내는 순서까지 같다. 흐름은 하나로 두고 코드 줄과 말만 풀이마다 끼운다.
+// 가중치가 모두 1이면 다익스트라의 'cost + 1 < dist'는 '아직 못 간 칸'과 같아서 두 풀이를 흐름 하나로 그린다.
+// 다른 것은 꺼내는 차례(큐는 넣은 차례, 힙은 (비용, x, y) 순)와 코드 줄, 말뿐이다. 이 예제에서는 꺼내는 차례도 같다.
 interface Script {
   heap: boolean; // 다익스트라: 넣은 뒤 비용순으로 정렬하고 힙 정렬 횟수를 센다
   at: Record<'start' | 'pop' | 'look' | 'mark' | 'push' | 'next' | 'goal', Lines>;
@@ -347,7 +350,7 @@ function layered(s: Script): Visualization {
       '(x, y)': cur ? fmt(cur) : '-',
       [s.heap ? 'cost' : 'dist[x][y]']: cur ? d(cur) : '-',
       '새로 넣은 칸': news.length ? news.map(fmt).join(', ') : '없음',
-      [s.heap ? 'heap' : 'queue']: `[${waiting.map((c) => (s.heap ? `(${d(c)}, ${c[0]}, ${c[1]})` : fmt(c))).join(', ')}]`,
+      [s.heap ? 'pq' : 'queue']: `[${waiting.map((c) => (s.heap ? `(${d(c)}, ${c[0]}, ${c[1]})` : fmt(c))).join(', ')}]`,
     },
   });
   // 꺼내기: 줄 맨 앞 토큰이 칸으로 날아가 그 칸이 지금 칸이 되고, 바로 전 칸은 방문을 마친다
@@ -378,7 +381,7 @@ function layered(s: Script): Visualization {
       break;
     }
 
-    // 상하좌우 판정. 다익스트라의 'cost + 1 < dist'도 가중치가 모두 1이면 '아직 못 간 칸'과 같다.
+    // 상하좌우 판정(Script 위 설명대로 두 풀이가 같다)
     const probes = neighbors(cur).map((n) => ({ n, verdict: !MAPS[n[0]][n[1]] ? 'wall' : d(n) ? 'seen' : 'new' } as const));
     const news = probes.filter((p) => p.verdict === 'new').map((p) => p.n);
     for (const [r, c] of news) {
@@ -388,7 +391,7 @@ function layered(s: Script): Visualization {
     }
     if (s.heap) {
       sorts += news.length;
-      waiting.sort((a, b) => d(a) - d(b)); // 비용이 같으면 넣은 차례대로
+      waiting.sort((a, b) => d(a) - d(b) || a[0] - b[0] || a[1] - b[1]); // (비용, x, y) 순: 두 코드의 힙과 같다
     }
 
     rec.step({
@@ -403,7 +406,8 @@ function layered(s: Script): Visualization {
     rec.do({ type: 'focus', ids: [cellId(cur), 'ring', ...probes.map((p) => cellId(p.n))] });
     for (const { n, verdict } of probes) {
       rec.do({ type: 'arrow', from: cellId(cur), to: cellId(n), verdict, label: VERDICT_LABEL[verdict] });
-      if (verdict === 'new') rec.do({ ...paint(n, { tone: 'queued', text: String(d(n)) }), pop: true });
+      // 새 칸은 화살표와 함께 칠하고 값을 적는다
+      if (verdict === 'new') rec.do({ ...paint(n, { tone: 'queued', text: String(d(n)) }), pop: true, together: true });
     }
 
     rec.phase(s.heap ? '넣고 정렬' : '넣기', news.length ? s.push(news) : '새로 넣을 칸이 없어 그대로 넘어갑니다.');
@@ -429,9 +433,10 @@ function backtrack(): Visualization {
   let calls = 0;
   let best = Infinity;
   let bestPath: Cell[] = [];
-  const meta = () => {
-    const top = stack.at(-1);
-    return { work: calls, variables: { '(x, y)': top ? fmt(top) : '-', count: top ? stack.length : '-', best: best === Infinity ? '∞' : best } };
+  // 변수는 단계가 끝났을 때 화면에 쌓인 경로(shown) 기준이다
+  const meta = (shown: Cell[] = stack) => {
+    const top = shown.at(-1);
+    return { work: calls, variables: { '(x, y)': top ? fmt(top) : '-', count: top ? shown.length : '-', best: best === Infinity ? '∞' : best } };
   };
 
   // 들어가기: 앞 칸은 밟고 있는 길, 새 칸은 지금 칸으로 칠하고, 길 선을 늘리고, 토큰을 스택에 쌓는다
@@ -447,35 +452,46 @@ function backtrack(): Visualization {
     lane.push(token(cell), cellId(cell));
   };
 
-  // 되돌아가기: 연달아 돌아온 칸을 한 단계로 묶는다. 위에서부터 토큰을 칸으로 돌려보내고 칸을 회색으로 칠한다.
+  // 되돌아가기: 연달아 돌아온 칸을 3칸씩 끊어 단계로 남긴다(마디 하나가 너무 길지 않게).
+  // 위에서부터 토큰을 칸으로 돌려보내고 칸을 회색으로 칠한다.
   const retreat = () => {
     if (!back.length) return;
-    const top = stack.at(-1);
+    const total = back.length;
+    const junction = stack.at(-1); // 안 가 본 방향이 남은 칸. 없으면 탐색이 끝난다
     const why = same(back[0], GOAL) ? '다른 경로를 찾으러' : `${josa(fmt(back[0]), '은', '는')} 막다른 곳이라`;
-    rec.step({
-      title: top ? `${fmt(top)}까지 ${back.length}칸 되돌아가기` : `${back.length}칸 모두 되돌아 나오기`,
-      codeHighlights: DFS_AT.back,
-      ...meta(),
-    });
-    rec.phase('되돌아가기', top
-      ? `${why} 안 가 본 방향이 남은 ${fmt(top)}까지 ${back.length}칸 되돌아갑니다.`
-      : `${why} 되돌아가지만 남은 방향이 없어 ${back.length}칸을 모두 빠져나옵니다.`);
-    const path = [...stack, ...back.toReversed()];
-    for (const cell of back) {
-      path.pop();
-      const head = path.at(-1);
-      lane.pop(cellId(cell));
-      rec.do(...together([
-        paint(cell, { tone: 'explored', text: '' }),
-        { type: 'set', id: 'trail', patch: { points: path.map(mid) } },
-        head ? ringTo(rec, head) : { type: 'remove', id: 'ring' },
-      ], true));
+    const intro = junction
+      ? `${why} 안 가 본 방향이 남은 ${fmt(junction)}까지 ${total}칸 되돌아갑니다.`
+      : `${why} 되돌아가지만 남은 방향이 없어 ${total}칸을 모두 빠져나옵니다.`;
+    const shown = [...stack, ...back.toReversed()]; // 화면에 쌓인 경로(아직 덜 돌아온 칸 포함)
+    for (let done = 0; done < total; ) {
+      const run = back.slice(done, done + 3);
+      const first = done === 0;
+      done += run.length;
+      const left = total - done;
+      rec.step({
+        title: `${junction ? `${fmt(junction)}까지 되돌아가기` : '모두 되돌아 나오기'} ${done}/${total}칸`,
+        codeHighlights: DFS_AT.back,
+        ...meta(shown.slice(0, shown.length - run.length)),
+      });
+      rec.phase('되돌아가기', left
+        ? `${first ? intro : '계속 되돌아갑니다.'} ${junction ? `${fmt(junction)}까지 ` : ''}${left}칸 남았습니다.`
+        : first ? intro : `계속 되돌아가 ${junction ? `${fmt(junction)}에 닿았습니다.` : '출발 칸까지 모두 빠져나왔습니다.'}`);
+      for (const cell of run) {
+        shown.pop();
+        const head = shown.at(-1);
+        lane.pop(cellId(cell));
+        rec.do(...together([
+          paint(cell, { tone: 'explored', text: '' }),
+          { type: 'set', id: 'trail', patch: { points: shown.map(mid) } },
+          head ? ringTo(rec, head) : { type: 'remove', id: 'ring' },
+        ], true));
+      }
+      // 남은 길: 맨 위 칸은 다시 지금 칸, 나머지는 밟고 있는 길(경로를 찾은 뒤라면 분홍에서 되돌린다)
+      rec.do(...together(shown.flatMap((c, i) => {
+        const tone = i === shown.length - 1 ? 'current' : 'trail';
+        return rec.get(cellId(c)).tone === tone ? [] : [paint(c, { tone })];
+      })));
     }
-    // 남은 길: 맨 위 칸은 다시 지금 칸, 나머지는 밟고 있는 길(경로를 찾은 뒤라면 분홍에서 되돌린다)
-    rec.do(...together(stack.flatMap((c, i) => {
-      const tone = i === stack.length - 1 ? 'current' : 'trail';
-      return rec.get(cellId(c)).tone === tone ? [] : [paint(c, { tone })];
-    })));
     back = [];
   };
 
