@@ -5,4 +5,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'game-map': () => import('./game-map.ts').then((m) => m.default),
   'target-number': () => import('./target-number.ts').then((m) => m.default),
   network: () => import('./network.ts').then((m) => m.default),
+  'word-conversion': () => import('./word-conversion.ts').then((m) => m.default),
 };
