@@ -9,4 +9,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'travel-route': () => import('./travel-route.ts').then((m) => m.default),
   'item-pickup': () => import('./item-pickup.ts').then((m) => m.default),
   'island-trip': () => import('./island-trip.ts').then((m) => m.default),
+  'maze-escape': () => import('./maze-escape.ts').then((m) => m.default),
 };
