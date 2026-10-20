@@ -6,10 +6,13 @@ interface StageViewProps {
   scene: Scene; // 처음 그릴 장면. 무대의 논리 크기도 여기서 정한다
   stageRef: React.RefObject<Stage | null>;
   maxScale: number;
+  maxHeight?: number; // 판이 쓸 수 있는 높이(px). 주면 배율을 높이로도 줄이되 MIN_FIT 밑으로는 줄이지 않는다
 }
 
-// Stage를 React에 붙이는 껍데기. 무대 안 DOM은 Stage가 맡고, 여기서는 칸 폭에 맞춰 배율만 정한다.
-export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale }) => {
+const MIN_FIT = 0.6;
+
+// Stage를 React에 붙이는 껍데기. 무대 안 DOM은 Stage가 맡고, 여기서는 칸 폭(과 maxHeight)에 맞춰 배율만 정한다.
+export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale, maxHeight }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [boxWidth, setBoxWidth] = useState(0);
@@ -35,7 +38,8 @@ export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale 
     return () => observer.disconnect();
   }, []);
 
-  const scale = boxWidth ? Math.min(maxScale, boxWidth / scene.width) : 1;
+  const fit = maxHeight === undefined ? Infinity : Math.max(MIN_FIT, maxHeight / scene.height);
+  const scale = boxWidth ? Math.min(maxScale, boxWidth / scene.width, fit) : 1;
   return (
     <div className="stage-view" ref={boxRef}>
       <div className="stage-frame" style={{ width: scene.width * scale, height: scene.height * scale }}>

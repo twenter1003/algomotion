@@ -1861,6 +1861,19 @@ code.info-pill {
   .problem-page .vars-card {
     flex: none;
   }
+
+  /* 판 높이는 Player가 한 화면에 맞추고, 칸을 내려 읽는 동안에도 진행 막대와 조작부는 칸 아래에 붙어 있다.
+     overflow: hidden은 스크롤 상자가 되어 sticky가 듣지 않으므로 clip으로 둥근 모서리만 자른다 */
+  .problem-page .player {
+    overflow: clip;
+  }
+
+  .problem-page .player .controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--sheet);
+  }
 }
 
 /* --- 문제 머리 --- */

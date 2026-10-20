@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Language, Visualization } from '../engine/model';
 import { initialPlayer, playerReducer } from '../engine/player';
 import type { Stage } from '../engine/stage';
@@ -18,11 +18,32 @@ interface PlayerProps {
 const NO_VARIABLES: Record<string, string | number> = {};
 const IDLE = { step: -1, phase: 0 }; // 연출하는 단계가 없음
 
+// 판이 쓸 수 있는 높이(px). Player가 따로 스크롤하는 칸 안에 있으면(넓은 화면), 칸을 맨 위로 올렸을 때
+// Player 위의 것(문제 머리, 풀이 탭)과 Player의 판 아닌 부분(마디 표시줄, 자막, 조작부)을 빼고 남는 높이다.
+// 칸이 따로 스크롤하지 않으면(좁은 화면) 없음. 펼친 '문제 보기'는 접힌 높이로 센다(읽는 동안 판이 줄지 않게).
+function fitHeightOf(section: HTMLElement): number | undefined {
+  let column = section.parentElement;
+  while (column && !/auto|scroll/.test(getComputedStyle(column).overflowY)) column = column.parentElement;
+  const frame = section.querySelector('.stage-frame');
+  if (!column || !frame) return undefined;
+  const style = getComputedStyle(column);
+  const contentTop = column.getBoundingClientRect().top + column.clientTop + parseFloat(style.paddingTop) - column.scrollTop;
+  const opened = [...column.querySelectorAll('details[open]')]
+    .filter((d) => d.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING)
+    .reduce((sum, d) => sum + d.getBoundingClientRect().height - (d.querySelector('summary')?.getBoundingClientRect().height ?? 0), 0);
+  const rect = section.getBoundingClientRect();
+  const above = rect.top - contentTop - opened;
+  const own = rect.height - frame.getBoundingClientRect().height;
+  return column.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - above - own;
+}
+
 // 마디 표시줄, 무대, 자막, 흐르는 진행 막대, 조작부와 단축키
 export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFinish, onLinesChange, onVariablesChange }) => {
   const total = viz.steps.length;
   const [s, dispatch] = useReducer(playerReducer, total, initialPlayer);
   const stageRef = useRef<Stage | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [fitHeight, setFitHeight] = useState<number>();
   const [reducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [live, setLive] = useState(IDLE); // 연출 중인 단계와 그 마디
   const cycle = useMemo(() => cycleLabels(viz), [viz]);
@@ -81,13 +102,27 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     if (s.index === total - 1) latest.current.onFinish?.();
   }, [s.index, total]);
 
-  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않는다
+  // 넓은 화면에서는 문제 머리·탭과 판, 자막, 조작부가 한 화면에 들어가게 판 높이를 맞춘다(창 크기나 글꼴이 바뀌면 다시)
+  // ponytail: 처음, 창 크기, 글꼴에서만 잰다. Player 위 내용이 다른 이유로 높이가 바뀌게 되면 ResizeObserver로 지켜본다
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (sectionRef.current) setFitHeight(fitHeightOf(sectionRef.current));
+    };
+    measure();
+    document.fonts.ready.then(measure);
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않는다.
+  // Space는 초점이 있는 버튼·링크·탭·펼치기를 누르는 데 두고(제 동작이 먼저), ←·→·R은 어디서나 듣는다
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
       if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
       if (e.code === 'Space') {
+        if (target instanceof Element && target.closest('button, a[href], summary, [role="tab"]')) return;
         e.preventDefault();
         dispatch({ type: s.playing ? 'pause' : 'play' });
       } else if (e.key === 'ArrowLeft') {
@@ -105,7 +140,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
   }, [s.playing]);
 
   return (
-    <section className="player panel" aria-label="풀이 재생">
+    <section className="player panel" aria-label="풀이 재생" ref={sectionRef}>
       <div className="phase-bar">
         <ol className="phase-list" aria-label="한 단계의 순서">
           {cycle.map((label, i) => (
@@ -129,7 +164,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
       </div>
 
       <div className="stage">
-        <StageView scene={viz.initial} stageRef={stageRef} maxScale={1.35} />
+        <StageView scene={viz.initial} stageRef={stageRef} maxScale={1.35} maxHeight={fitHeight} />
       </div>
 
       <div className="readout">
