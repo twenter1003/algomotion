@@ -4,4 +4,5 @@ import type { Problem } from '../../engine/model.ts';
 export const loaders: Record<string, () => Promise<Problem>> = {
   'prime-finder': () => import('./prime-finder.ts').then((m) => m.default),
   'carpet': () => import('./carpet.ts').then((m) => m.default),
+  'fatigue': () => import('./fatigue.ts').then((m) => m.default),
 };

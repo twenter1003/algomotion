@@ -1,6 +1,8 @@
 // 완전탐색 문제들이 함께 쓰는 작은 도구: 나무 배치와 자막 시간 맞추기.
-import type { Point, Rect, Visualization } from '../../engine/model.ts';
+import type { Action, ItemPatch, Point, Rect, Tone, Visualization } from '../../engine/model.ts';
+import type { StepRecorder } from '../../engine/recorder.ts';
 import { KEYFRAME_TAIL, PHASE_GAP, STEP_TAIL, planStep } from '../../engine/timeline.ts';
+import { together } from '../shared.ts';
 
 export interface Shape { id: string; kids?: Shape[] }
 
@@ -38,3 +40,13 @@ export function holdCaptions(viz: Visualization): Visualization {
   }
   return viz;
 }
+
+// 동작을 짧게 쓰는 도구들(문제 파일마다 같은 모양이라 여기 둔다)
+export const wait = (ms: number): Action => ({ type: 'wait', ms });
+export const set = (id: string, patch: ItemPatch, pop = false): Action => ({ type: 'set', id, patch, ...(pop ? { pop } : {}) });
+export const tone = (id: string, t: Tone, pop = false): Action => set(id, { tone: t }, pop);
+// 살피기를 마치며 흐림과 화살표를 걷는다
+export const clear = (): Action[] => together([{ type: 'unfocus' }, { type: 'clearMarks' }]);
+// 지금 서 있는 자리를 가리키는 고리: 없으면 만들고, 있으면 미끄러뜨린다(rect는 around()로 넓힌 것)
+export const ringTo = (rec: StepRecorder, rect: Rect, id = 'ring'): Action =>
+  rec.has(id) ? set(id, { rect }) : { type: 'add', item: { id, kind: 'ring', rect } };
