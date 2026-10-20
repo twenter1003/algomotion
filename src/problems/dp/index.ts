@@ -5,4 +5,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'integer-triangle': () => import('./integer-triangle.ts').then((m) => m.default),
   'way-to-school': () => import('./way-to-school.ts').then((m) => m.default),
   'express-with-n': () => import('./express-with-n.ts').then((m) => m.default),
+  'long-jump': () => import('./long-jump.ts').then((m) => m.default),
 };
