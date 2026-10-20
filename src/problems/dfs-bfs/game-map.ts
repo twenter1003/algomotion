@@ -4,7 +4,7 @@ import { Lane, type LaneOptions } from '../../engine/lane.ts';
 import { around, center, grid } from '../../engine/layout.ts';
 import type { Action, Item, ItemPatch, Language, Point, Problem, Rect, Scene, Visualization } from '../../engine/model.ts';
 import { StepRecorder } from '../../engine/recorder.ts';
-import { at, fmt, josa, ro } from '../shared.ts';
+import { fmt, josa, lines, ro, together } from '../shared.ts';
 
 type Cell = [number, number];
 type Lines = Record<Language, number[]>;
@@ -26,10 +26,6 @@ const DIRS: Cell[] = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // 상, 하, 좌, 우(�
 /* ------------------------------------------------------------------ */
 /* 풀이 코드와 마디마다 비출 줄                                          */
 /* ------------------------------------------------------------------ */
-
-// 풀이 코드에서 조각이 든 줄 번호: Python 조각들, JavaScript 조각들
-const lines = (code: Record<Language, string>, python: string[], javascript: string[]): Lines =>
-  ({ python: at(code.python, ...python), javascript: at(code.javascript, ...javascript) });
 
 const BFS = {
   python: `from collections import deque
@@ -275,9 +271,6 @@ function board(lane: '큐' | '힙' | '스택', ...extra: Item[]): Scene {
 }
 
 const paint = (c: Cell, patch: ItemPatch): Extract<Action, { type: 'set' }> => ({ type: 'set', id: cellId(c), patch });
-// 한 묶음: 첫 동작은 앞 동작이 끝난 뒤, 나머지는 첫 동작과 같이 시작한다. join이면 첫 동작도 앞 동작과 같이 시작한다.
-const together = (actions: Action[], join = false): Action[] =>
-  actions.map((a, i) => (i || join ? { ...a, together: true } : a));
 // 지금 칸 테두리: 처음에는 그 자리에 나타나고, 그 뒤로는 미끄러져 옮겨 간다
 const ringTo = (rec: StepRecorder, c: Cell): Action => {
   const rect = around(cellRect(...c), 5);

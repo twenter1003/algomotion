@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { at, fmt, josa, ro, sum } from '../src/problems/shared.ts';
+import { at, fmt, josa, lines, ro, sum, together } from '../src/problems/shared.ts';
 
 test('josa: 2·4·5·9로 끝나면 받침 없는 조사', () => {
   assert.equal(josa(2, '을', '를'), '2를');
@@ -23,4 +23,12 @@ test('at: 조각이 든 첫 줄 번호, 없으면 오류', () => {
 test('fmt, sum', () => {
   assert.equal(fmt([2, 3]), '(2, 3)');
   assert.equal(sum([1, 2, 3]), 6);
+});
+test('lines: 두 언어 코드에서 조각이 든 줄 번호', () => {
+  assert.deepEqual(lines({ python: 'a\nb', javascript: 'x\ny' }, ['b'], ['y', 'x']), { python: [2], javascript: [2, 1] });
+});
+test('together: 첫 동작만 앞 묶음 뒤에, join이면 첫 동작도 같이', () => {
+  const wait = { type: 'wait', ms: 1 } as const;
+  assert.deepEqual(together([wait, wait]).map((a) => a.together), [undefined, true]);
+  assert.deepEqual(together([wait], true).map((a) => a.together), [true]);
 });
