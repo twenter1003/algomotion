@@ -1,8 +1,23 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
+import type { Item, Point, Rect, Scene, Visualization } from '../src/engine/model.ts';
 import { LOADERS } from '../src/problems/registry.ts';
 import { PYTHON, runPython } from './python.ts';
 import { mulberry32 } from './rng.ts';
+
+// 장면 점검 도구. 0.5px까지는 오차로 보고, 가장자리만 맞닿은 것은 겹침이 아니다.
+const TOL = 0.5;
+// 물체가 차지하는 두 모서리(line은 rect 대신 모든 점)
+const corners = (item: Item): Point[] =>
+  item.kind === 'line' ? item.points ?? [] : [[item.rect.x, item.rect.y], [item.rect.x + item.rect.w, item.rect.y + item.rect.h]];
+// 안에 든다는 식을 뒤집어 쓴 것은 NaN 같은 깨진 좌표도 밖으로 치기 위해서다
+const outside = (item: Item, { width, height }: Scene) =>
+  corners(item).some(([x, y]) => !(x >= -TOL && x <= width + TOL && y >= -TOL && y <= height + TOL));
+const overlap = (a: Rect, b: Rect) =>
+  Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > TOL && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > TOL;
+// 처음 장면과 단계마다의 장면: [이름, 장면]
+const scenesOf = (viz: Visualization): [string, Scene][] =>
+  [['initial', viz.initial], ...viz.steps.map((s): [string, Scene] => [s.title, s.scene])];
 
 // 모든 문제에 같은 점검을 돌리고, 기대값 표는 있는 문제만 확인한다.
 const load = (code: string) => new Function(`${code}\nreturn solution;`)() as (...a: unknown[]) => unknown;
@@ -36,13 +51,36 @@ for (const [id, loader] of Object.entries(LOADERS)) {
         }
       }));
     });
+    test('하이라이트가 비어 있지 않음', () => {
+      problem.approaches.forEach((a, i) => vizs[i].steps.forEach((s) => {
+        for (const lang of ['python', 'javascript'] as const)
+          for (const h of [s.codeHighlights, ...s.phases.map((p) => p.codeHighlights).filter(Boolean)])
+            assert.ok(h![lang].length > 0, `${a.id} ${s.title} ${lang}`);
+      }));
+    });
+    test('물체가 장면 안에 있음', () => {
+      problem.approaches.forEach((a, i) => scenesOf(vizs[i]).forEach(([where, scene]) => {
+        for (const item of scene.items)
+          if (outside(item, scene)) assert.fail(`${a.id} ${where} ${item.id} ${JSON.stringify(corners(item))} (장면 ${scene.width}×${scene.height})`);
+      }));
+    });
+    test('칸끼리, 토큰끼리 겹치지 않음', () => {
+      problem.approaches.forEach((a, i) => scenesOf(vizs[i]).forEach(([where, scene]) => {
+        for (const kind of ['cell', 'token']) {
+          const items = scene.items.filter((item) => item.kind === kind);
+          items.forEach((p, k) => items.slice(k + 1).forEach((q) => {
+            if (overlap(p.rect, q.rect)) assert.fail(`${a.id} ${where} ${p.id} ↔ ${q.id}`);
+          }));
+        }
+      }));
+    });
     test('work는 줄지 않고, 마지막 단계는 결과 단계이며 answer가 같은 풀이 코드의 결과와 같음', () => {
       problem.approaches.forEach((a, i) => {
         const steps = vizs[i].steps;
         steps.forEach((s, k) => k && assert.ok(s.work >= steps[k - 1].work, `${a.id} ${s.title}`));
         const last = steps.at(-1)!;
-        assert.ok(last.isKeyframe);
-        assert.deepEqual(json(last.answer), json(load(a.code.javascript)(...structuredClone(problem.demo.input))));
+        assert.ok(last.isKeyframe, `${a.id} 마지막 단계(${last.title})가 결과 단계가 아님`);
+        assert.deepEqual(json(last.answer), json(load(a.code.javascript)(...structuredClone(problem.demo.input))), `${a.id} answer`);
       });
     });
     test('함정이 드러남', () => {
