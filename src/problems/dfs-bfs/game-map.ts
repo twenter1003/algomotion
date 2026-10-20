@@ -452,7 +452,11 @@ function backtrack(): Visualization {
     if (!back.length) return;
     const top = stack.at(-1);
     const why = same(back[0], GOAL) ? '다른 경로를 찾으러' : `${josa(fmt(back[0]), '은', '는')} 막다른 곳이라`;
-    rec.step({ title: top ? `${fmt(top)}까지 ${back.length}칸 되돌아가기` : `${back.length}칸 모두 되돌아 나오기`, codeHighlights: DFS_AT.back, ...meta() });
+    rec.step({
+      title: top ? `${fmt(top)}까지 ${back.length}칸 되돌아가기` : `${back.length}칸 모두 되돌아 나오기`,
+      codeHighlights: DFS_AT.back,
+      ...meta(),
+    });
     rec.phase('되돌아가기', top
       ? `${why} 안 가 본 방향이 남은 ${fmt(top)}까지 ${back.length}칸 되돌아갑니다.`
       : `${why} 되돌아가지만 남은 방향이 없어 ${back.length}칸을 모두 빠져나옵니다.`);
@@ -516,7 +520,8 @@ function backtrack(): Visualization {
   retreat();
   rec.step({ title: `최단 ${best}칸 확정`, codeHighlights: DFS_AT.result, ...meta(), answer: best, isKeyframe: true });
   // 벽 없는 6×6 맵에서 이 함정 코드는 dfs를 18,470,411번 부르고, BFS는 칸을 36번 꺼낸다(직접 세어 봄)
-  rec.phase('최단 확정', `모든 경로를 다 본 뒤에야 최단 ${best}칸을 확정합니다. 벽이 없는 6×6 맵만 돼도 칸을 1,847만 번 밟아야 해서(BFS는 36번) 100×100 맵에서는 시간 초과가 납니다.`);
+  rec.phase('최단 확정',
+    `모든 경로를 다 본 뒤에야 최단 ${best}칸을 확정합니다. 벽이 없는 6×6 맵만 돼도 칸을 1,847만 번 밟아야 해서(BFS는 36번) 100×100 맵에서는 시간 초과가 납니다.`);
   drawPath(rec, bestPath);
   return rec.finish();
 }
