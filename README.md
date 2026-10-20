@@ -23,6 +23,8 @@
 
 ## 실행
 
+Node 22.18 이상이 필요합니다. 테스트가 `.ts` 파일을 빌드 없이 Node로 바로 불러옵니다.
+
 ```bash
 npm install
 npm run dev
@@ -36,11 +38,12 @@ npm run dev
 npm run check
 ```
 
-`tests/`의 테스트를 모두 돌리고, 하나라도 어긋나면 어느 문제의 어느 풀이인지 알려 주며 실패합니다. 문제마다 아래를 확인합니다.
+`tests/`의 테스트를 모두 돌리고, 하나라도 어긋나면 실패합니다. 실패한 줄에는 문제 id와 점검 이름이 나오고, 풀이마다 도는 점검은 풀이 id와 그 단계나 입력도 함께 나옵니다. 문제마다 아래를 확인합니다.
 
 - 정석·대안의 JavaScript와 Python 풀이가 입출력 예와 문제별 추가 사례를 모두 맞힙니다. python3가 없으면 Python 점검만 건너뜁니다.
 - 시드를 고정한 무작위 입력 30개에서 정석·대안(과 시간 초과형 함정)의 답이 JavaScript와 Python에서 모두 서로 같습니다.
-- 모든 단계와 마디의 하이라이트 줄이 그 풀이 코드 안에 있습니다.
+- 모든 단계와 마디의 하이라이트가 언어마다 한 줄 이상이고, 그 줄이 모두 그 풀이 코드 안에 있습니다.
+- 처음 장면과 모든 단계의 장면에서 물체가 장면 안에 있고, 칸끼리, 토큰끼리 겹치지 않습니다.
 - 시각화의 마지막 답이 같은 입력을 그 풀이의 JavaScript 코드로 돌린 결과와 같습니다.
 - 함정이 드러납니다. 오답형은 답이 정석과 다르고, 시간 초과형은 한 일의 양이 정석보다 많습니다.
 - 단계마다 마디가 하나 이상 있고 자막이 비어 있지 않으며, 한 일의 양이 줄지 않고 마지막 단계가 결과 단계입니다. 단계 수는 정석 8~25개, 함정 40개 이하입니다.
@@ -50,15 +53,16 @@ npm run check
 
 ## 문제 추가
 
-1. `src/problems/<유형>/<id>.ts`를 만들고 `src/engine/model.ts`의 `Problem`을 기본으로 내보냅니다. 기존 문제 파일 하나를 본뜨면 쉽습니다.
-   - 문제 정보(제목, 레벨, 유형, 원문 주소, 요약·제한 사항·입출력 예, 핵심 발상)와 시각화 입력 `demo`, 한 일의 양 단위 `workUnit`을 적습니다.
+1. `src/problems/<유형 id>/<문제 id>.ts`를 만들고 `src/engine/model.ts`의 `Problem`을 `export default`로 내보냅니다. 유형 id는 `src/catalog.ts`의 유형 id(예: `dfs-bfs`, `stack-queue`)입니다. 기존 문제 파일 하나를 본뜨면 쉽습니다.
+   - 문제 정보(제목, 레벨, 유형, 원문 주소, 요약·제한 사항·입출력 예, 핵심 발상)와 시각화 입력 `demo`, 한 일의 양 단위 `workUnit`을 적습니다. 문제 id, 제목(`title`), 레벨(`level`), 유형(`category`), 원문 주소(`sourceUrl`)는 `src/catalog.ts`에 있는 그 문제 줄과 같아야 합니다(`npm run check`가 확인).
    - `approaches`에는 정석, 대안, 함정 순서로 세 풀이를 넣습니다. 풀이마다 이름, 복잡도, 평가, Python·JavaScript 코드, `visualize()`가 있고, 함정에는 `trap: 'wrong'`(오답) 또는 `'slow'`(시간 초과)를 답니다.
 2. `visualize()`는 `StepRecorder`로 마디를 기록합니다. `step()`으로 단계를 열고, `phase()`로 마디(이름과 자막)를 열고, `do()`로 무대 동작을 적습니다. 큐·스택·힙 줄은 `Lane`이 맡습니다. 세 풀이는 같은 입력(`demo.input`)으로 돌립니다.
 3. 하이라이트 줄은 `at(code, '코드 일부')`나 `lines(code, [Python 조각], [JavaScript 조각])`로 지정하면 코드를 고쳐도 줄 번호가 어긋나지 않습니다. 자막의 조사는 `josa`, `ro`로 맞춥니다.
-4. `src/problems/registry.ts`에 한 줄을 더합니다. 목록(`src/catalog.ts`)에는 76문제가 이미 있어서, 같은 id의 문제 파일이 붙으면 홈과 옆 메뉴에서 열립니다.
+4. 같은 유형 폴더의 `src/problems/<유형 id>/index.ts`에 있는 `loaders`에 한 줄을 더합니다. `src/problems/registry.ts`는 유형별 `loaders`를 모으기만 하므로 고치지 않습니다. 목록(`src/catalog.ts`)에는 76문제가 이미 있어서, 같은 id의 문제 파일이 붙으면 홈과 옆 메뉴에서 '준비 중' 대신 열립니다.
 
    ```ts
-   'target-number': () => import('./dfs-bfs/target-number.ts').then((m) => m.default),
+   // src/problems/dfs-bfs/index.ts
+   'target-number': () => import('./target-number.ts').then((m) => m.default),
    ```
 
 5. `checks`에 `cases`(입출력 예와 직접 만든 사례)와 `random(rand)`(시드를 고정한 난수로 작은 입력을 만드는 생성기)를 넣습니다. `tests/problems.test.ts`의 `EXPECT`에 세 풀이의 한 일의 양과 정답을 적어 두면 그 값도 확인합니다(선택).
