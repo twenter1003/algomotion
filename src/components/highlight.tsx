@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Language } from '../types';
+import type { Language } from '../engine/model';
 
 export const LANGUAGES: { id: Language; label: string }[] = [
   { id: 'python', label: 'Python' },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Code, Film, Scale, X } from 'lucide-react';
+import { Film, LayoutGrid, ListOrdered, Scale, X } from 'lucide-react';
 
 interface GuideModalProps {
   isOpen: boolean;
@@ -37,24 +37,31 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
 
         <ul className="guide-list">
           <li>
-            <Film size={20} aria-hidden="true" />
+            <ListOrdered size={20} aria-hidden="true" />
             <div>
-              <h3>단계별 그림</h3>
-              <p>재생하면 알고리즘이 한 단계씩 움직입니다. 그림 위 손글씨 메모가 방금 일어난 일을 한 줄로 요약하고, 아래 설명이 이유를 풀어 줍니다.</p>
+              <h3>마디</h3>
+              <p>한 단계는 꺼내기 → 살피기 → 넣기처럼 몇 마디로 나뉘어 차례로 움직입니다. 그림 위쪽에 지금 마디가 표시되고, 코드에서는 그 마디의 줄이 칠해집니다.</p>
             </div>
           </li>
           <li>
-            <Code size={20} aria-hidden="true" />
+            <Film size={20} aria-hidden="true" />
             <div>
-              <h3>코드와 변수</h3>
-              <p>오른쪽 코드에서 지금 실행 중인 줄이 형광펜으로 칠해지고, 방금 값이 바뀐 변수에는 &lsquo;바뀜&rsquo; 표시가 붙습니다.</p>
+              <h3>풀이 탭</h3>
+              <p>정석, 대안, 함정 탭을 눌러 풀이를 바꿔 봅니다. 풀이마다 그림이 따로 움직이고, 코드와 평가도 그 풀이 것으로 바뀝니다.</p>
             </div>
           </li>
           <li>
             <Scale size={20} aria-hidden="true" />
             <div>
-              <h3>풀이 비교</h3>
-              <p>위쪽 &lsquo;풀이 비교&rsquo;에서 정석, 대안, 함정 풀이를 복잡도와 코드로 나란히 봅니다.</p>
+              <h3>나란히 비교</h3>
+              <p>&lsquo;나란히 비교&rsquo;를 누르면 세 풀이가 같은 박자로 동시에 돌아갑니다. 판마다 한 일의 양이 올라가서 어느 풀이가 더 많이 일하는지 바로 보입니다.</p>
+            </div>
+          </li>
+          <li>
+            <LayoutGrid size={20} aria-hidden="true" />
+            <div>
+              <h3>문제 고르기</h3>
+              <p>홈에서는 유형 카드로, 문제 화면에서는 왼쪽 옆 메뉴로 문제를 고릅니다. 좁은 화면에서는 &lsquo;문제 목록&rsquo; 버튼으로 옆 메뉴를 엽니다.</p>
             </div>
           </li>
         </ul>
