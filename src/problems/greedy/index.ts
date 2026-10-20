@@ -9,4 +9,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'base-station': () => import('./base-station.ts').then((m) => m.default),
   tangerine: () => import('./tangerine.ts').then((m) => m.default),
   'delivery-pickup': () => import('./delivery-pickup.ts').then((m) => m.default),
+  interception: () => import('./interception.ts').then((m) => m.default),
 };
