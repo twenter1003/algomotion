@@ -6,4 +6,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'carpet': () => import('./carpet.ts').then((m) => m.default),
   'fatigue': () => import('./fatigue.ts').then((m) => m.default),
   'split-power-grid': () => import('./split-power-grid.ts').then((m) => m.default),
+  'vowel-dictionary': () => import('./vowel-dictionary.ts').then((m) => m.default),
 };
