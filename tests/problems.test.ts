@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { LOADERS } from '../src/problems/registry.ts';
+import { PYTHON, runPython } from './python.ts';
+import { mulberry32 } from './rng.ts';
 
 // 모든 문제에 같은 점검을 돌리고, 기대값 표는 있는 문제만 확인한다.
 const load = (code: string) => new Function(`${code}\nreturn solution;`)() as (...a: unknown[]) => unknown;
@@ -52,6 +54,20 @@ for (const [id, loader] of Object.entries(LOADERS)) {
     if (EXPECT[id]) test('기대값', () => {
       assert.deepEqual(vizs.map((v) => v.steps.at(-1)!.work), EXPECT[id].work);
       assert.deepEqual(json(vizs[0].steps.at(-1)!.answer), EXPECT[id].answer);
+    });
+    test('정석과 대안의 Python 코드가 모든 사례를 맞힘', { skip: !PYTHON && 'python3 없음' }, () => {
+      for (const a of problem.approaches.slice(0, 2))
+        assert.deepEqual(runPython(a.code.python, problem.checks.cases.map((c) => c.args)), problem.checks.cases.map((c) => json(c.expected)), a.id);
+    });
+    test('무작위 입력 30개에서 정석·대안(과 느린 함정)의 JS·Python 답이 모두 같음', () => {
+      const rand = mulberry32(20261020);
+      const inputs = Array.from({ length: 30 }, () => problem.checks.random(rand));
+      const same = problem.approaches.filter((a) => a.rank !== 'TRAP' || a.trap === 'slow');
+      const expected = inputs.map((args) => json(load(same[0].code.javascript)(...structuredClone(args))));
+      for (const a of same) {
+        assert.deepEqual(inputs.map((args) => json(load(a.code.javascript)(...structuredClone(args)))), expected, `${a.id} JS`);
+        if (PYTHON) assert.deepEqual(runPython(a.code.python, inputs), expected, `${a.id} Python`);
+      }
     });
   });
 }
