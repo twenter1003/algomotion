@@ -102,23 +102,24 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     if (s.index === total - 1) latest.current.onFinish?.();
   }, [s.index, total]);
 
-  // 넓은 화면에서는 문제 머리·탭과 판, 자막, 조작부가 한 화면에 들어가게 판 높이를 맞춘다(창 크기나 글꼴이 바뀌면 다시)
-  // ponytail: 처음, 창 크기, 글꼴에서만 잰다. Player 위 내용이 다른 이유로 높이가 바뀌게 되면 ResizeObserver로 지켜본다
+  // 넓은 화면에서는 문제 머리·탭과 판, 자막, 조작부가 한 화면에 들어가게 판 높이를 맞춘다.
+  // 처음, 글꼴을 받은 뒤, Player를 담은 칸의 크기가 바뀔 때(창 크기, 옆 메뉴 접기·펴기, 1280px 넘나들기) 잰다.
+  // Player 자신은 지켜보지 않는다. 재생 중 자막이나 마디 표시줄 높이가 바뀔 때마다 판이 줄었다 늘었다 하지 않게
   useLayoutEffect(() => {
-    const measure = () => {
-      if (sectionRef.current) setFitHeight(fitHeightOf(sectionRef.current));
-    };
+    const section = sectionRef.current!;
+    const measure = () => setFitHeight(fitHeightOf(section));
     measure();
     document.fonts.ready.then(measure);
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(section.parentElement!);
+    return () => observer.disconnect();
   }, []);
 
-  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않는다.
+  // 단축키. 글자 입력 중이거나 조합키(⌘R 새로고침 등)는 건드리지 않고, 창(서랍, 사용법)이 열려 있으면 뒤 화면을 움직이지 않는다.
   // Space는 초점이 있는 버튼·링크·탭·펼치기를 누르는 데 두고(제 동작이 먼저), ←·→·R은 어디서나 듣는다
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || document.querySelector('dialog[open]')) return;
       const target = e.target as HTMLElement | null;
       if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
       if (e.code === 'Space') {

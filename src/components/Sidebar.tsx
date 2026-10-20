@@ -13,12 +13,19 @@ interface SidebarProps {
 const TIERS = [1, 2, 3] as const;
 
 // 문제 화면 왼쪽 목록(catalog.html 시안 B안): 빈도 단계 → 유형(펼치기/접기) → 문제.
-// 지금 문제의 유형은 처음에 펼쳐 두고, 사용자가 직접 펼치거나 접은 유형은 그 선택을 따른다. 검색 중에는 맞는 유형을 모두 펼친다.
+// 지금 문제의 유형은 펼쳐 두고, 사용자가 직접 펼치거나 접은 유형은 그 선택을 따른다. 검색 중에는 맞는 유형을 모두 펼친다.
+// 다른 문제로 가면 그 문제의 유형은 전에 접었더라도 다시 펼친다.
 export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => {
   const [query, setQuery] = useState('');
   const [choice, setChoice] = useState<ReadonlyMap<CategoryId, boolean>>(new Map());
+  const [shownId, setShownId] = useState(currentId);
   const currentRef = useRef<HTMLAnchorElement>(null);
   const current = findProblem(currentId)?.category.id;
+  // 그리는 중에 바로 고친다(효과로 고치면 접힌 채 한 번 그려져 아래 scrollIntoView가 지금 문제를 찾지 못한다)
+  if (shownId !== currentId) {
+    setShownId(currentId);
+    if (current) setChoice((m) => new Map([...m].filter(([id]) => id !== current)));
+  }
   const q = query.trim();
   const groups = searchCatalog(q);
   const isOpen = (c: Category) => q !== '' || (choice.get(c.id) ?? c.id === current);
@@ -98,7 +105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentId, seen, onPick }) => 
           </div>
         );
       })}
-      {!groups.length && <p className="side-empty">&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</p>}
+      {/* 화면 읽기 프로그램이 바뀐 글을 읽도록 알림 자리는 늘 둔다 */}
+      <p className="side-empty" role="status">
+        {!groups.length && <>&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</>}
+      </p>
     </nav>
   );
 };

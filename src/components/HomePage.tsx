@@ -133,7 +133,10 @@ export const HomePage: React.FC = () => {
           </section>
         );
       })}
-      {!groups.length && <p className="home-empty">&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</p>}
+      {/* 화면 읽기 프로그램이 바뀐 글을 읽도록 알림 자리는 늘 둔다 */}
+      <p className="home-empty" role="status">
+        {!groups.length && <>&lsquo;{q}&rsquo;에 맞는 문제가 없습니다.</>}
+      </p>
 
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
     </main>
