@@ -7,4 +7,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   lifeboat: () => import('./lifeboat.ts').then((m) => m.default),
   'speed-camera': () => import('./speed-camera.ts').then((m) => m.default),
   'base-station': () => import('./base-station.ts').then((m) => m.default),
+  tangerine: () => import('./tangerine.ts').then((m) => m.default),
 };
