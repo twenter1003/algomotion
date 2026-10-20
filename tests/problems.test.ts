@@ -9,6 +9,7 @@ const load = (code: string) => new Function(`${code}\nreturn solution;`)() as (.
 const json = (v: unknown) => JSON.parse(JSON.stringify(v));
 const EXPECT: Record<string, { work: [number, number, number]; answer: unknown }> = {
   'game-map': { work: [16, 16, 25], answer: 11 },
+  immigration: { work: [6, 6, 28], answer: 28 },
 };
 for (const [id, loader] of Object.entries(LOADERS)) {
   const problem = await loader();
