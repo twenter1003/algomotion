@@ -11,4 +11,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'largest-square': () => import('./largest-square.ts').then((m) => m.default),
   'coin-change': () => import('./coin-change.ts').then((m) => m.default),
   'pulse-subarray': () => import('./pulse-subarray.ts').then((m) => m.default),
+  'number-transform': () => import('./number-transform.ts').then((m) => m.default),
 };
