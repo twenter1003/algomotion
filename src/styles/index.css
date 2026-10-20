@@ -1119,7 +1119,6 @@ a:hover {
 /* --- 나란히 비교 --- */
 
 .race {
-  container-type: inline-size; /* 판을 나란히 둘지 쌓을지 창 폭이 아니라 이 칸의 폭으로 정한다(아래 @container) */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1139,10 +1138,16 @@ a:hover {
   font: 500 12.5px/1.5 var(--font-mono);
 }
 
+/* 세 판을 나란히 둘지 쌓을지는 RaceView가 칸 폭과 가장 넓은 장면으로 정해 is-stacked를 단다.
+   RaceView의 BOARD_GAP(12px)과 BOARD_FRAME(카드 테두리 + 판 안쪽 여백)이 아래 값과 같아야 한다 */
 .race-boards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.race-boards.is-stacked {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* 판 머리, 판, 판 발을 세 판이 같은 줄로 나눠 써서 머리 높이가 달라도 판이 나란히 시작한다 */
@@ -1208,13 +1213,6 @@ a:hover {
   color: var(--ink-2);
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
-}
-
-/* 판 셋이 나란히 들어갈 폭(640px)이 안 되면 위아래로 쌓는다. 옆 메뉴와 코드 칸이 가운데 칸을 좁히는 것까지 따른다 */
-@container (width < 640px) {
-  .race-boards {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* --- 한눈에 비교 막대 --- */
