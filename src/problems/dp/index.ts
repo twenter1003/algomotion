@@ -6,4 +6,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'way-to-school': () => import('./way-to-school.ts').then((m) => m.default),
   'express-with-n': () => import('./express-with-n.ts').then((m) => m.default),
   'long-jump': () => import('./long-jump.ts').then((m) => m.default),
+  'tiling-2xn': () => import('./tiling-2xn.ts').then((m) => m.default),
 };
