@@ -11,7 +11,12 @@ exec(data['code'], ns)
 print(json.dumps([ns['solution'](*args) for args in data['cases']]))`;
 
 export function runPython(code: string, argsList: unknown[][]): unknown[] {
-  const r = spawnSync('python3', ['-c', HARNESS], { encoding: 'utf8', input: JSON.stringify({ code, cases: argsList }) });
-  if (r.status !== 0) throw new Error(`Python 실행 실패\n${r.stderr}`);
+  // -X utf8: 표준 입출력을 locale과 무관하게 UTF-8로 읽고 쓴다. timeout: 20초가 지나면 끊고 error에 ETIMEDOUT을 담는다.
+  const r = spawnSync('python3', ['-X', 'utf8', '-c', HARNESS], {
+    encoding: 'utf8',
+    input: JSON.stringify({ code, cases: argsList }),
+    timeout: 20_000,
+  });
+  if (r.status !== 0) throw new Error(`Python 실행 실패 (${r.error?.message ?? r.signal ?? `exit ${r.status}`})\n${r.stderr ?? ''}`);
   return JSON.parse(r.stdout);
 }
