@@ -5,4 +5,5 @@ export const loaders: Record<string, () => Promise<Problem>> = {
   'prime-finder': () => import('./prime-finder.ts').then((m) => m.default),
   'carpet': () => import('./carpet.ts').then((m) => m.default),
   'fatigue': () => import('./fatigue.ts').then((m) => m.default),
+  'split-power-grid': () => import('./split-power-grid.ts').then((m) => m.default),
 };
