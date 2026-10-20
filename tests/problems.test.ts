@@ -11,6 +11,7 @@ const EXPECT: Record<string, { work: [number, number, number]; answer: unknown }
   'game-map': { work: [16, 16, 25], answer: 11 },
   immigration: { work: [6, 6, 28], answer: 28 },
   'feature-development': { work: [7, 7, 7], answer: [4, 2, 1] },
+  'integer-triangle': { work: [10, 14, 31], answer: 30 },
 };
 for (const [id, loader] of Object.entries(LOADERS)) {
   const problem = await loader();

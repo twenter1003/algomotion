@@ -5,4 +5,5 @@ export const LOADERS: Record<string, () => Promise<Problem>> = {
   'game-map': () => import('./dfs-bfs/game-map.ts').then((m) => m.default),
   immigration: () => import('./binary-search/immigration.ts').then((m) => m.default),
   'feature-development': () => import('./stack-queue/feature-development.ts').then((m) => m.default),
+  'integer-triangle': () => import('./dp/integer-triangle.ts').then((m) => m.default),
 };
