@@ -4,4 +4,5 @@ import type { Problem } from '../../engine/model.ts';
 export const loaders: Record<string, () => Promise<Problem>> = {
   joystick: () => import('./joystick.ts').then((m) => m.default),
   'make-big-number': () => import('./make-big-number.ts').then((m) => m.default),
+  lifeboat: () => import('./lifeboat.ts').then((m) => m.default),
 };
