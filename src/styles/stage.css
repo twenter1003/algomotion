@@ -1,0 +1,477 @@
+/* ==========================================================================
+   무대: 장면 물체(.it), 덧그림(.stage-mark), 재생 화면
+   크기와 움직임은 시안 ①(motion-feel-v2)과 ②(approach-view)를 따릅니다. 색은 index.css 맨 위 토큰만 씁니다.
+   ========================================================================== */
+
+/* --- 배율 껍데기 (StageView) --- */
+
+.stage-view {
+  flex: 1;
+  min-width: 0;
+}
+
+.stage-frame {
+  position: relative;
+  margin: 0 auto;
+}
+
+/* --- 무대 (Stage가 클래스와 논리 크기를 붙임) --- */
+
+.stage-board {
+  --path-line: color-mix(in srgb, var(--hl-pink-line) 40%, var(--red-pen));
+  --trail-line: color-mix(in srgb, var(--hl-yellow) 75%, var(--ink-3));
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--ink);
+  transform-origin: 0 0;
+}
+
+.it {
+  position: absolute;
+  transition:
+    opacity var(--t-fade, 200ms) ease,
+    background-color var(--t-set, 260ms) ease,
+    border-color var(--t-set, 260ms) ease,
+    color var(--t-set, 260ms) ease;
+}
+
+.stage-board.is-still .it,
+.stage-board.is-still .it * {
+  transition: none !important;
+}
+
+.stage-board.is-tween .it {
+  transition-property: left, top, width, height, opacity, background-color, border-color, color;
+  transition-duration: 0.45s;
+  transition-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.stage-board.is-tween .it-fill {
+  transition: width 0.45s ease;
+}
+
+.it.is-entering {
+  opacity: 0;
+}
+
+/* 살피는 동안에는 대상만 밝게 */
+.stage-board.is-focus .it:not(.in-focus) {
+  opacity: 0.22;
+}
+
+/* 상태색: 물체마다 바탕(--bg)과 테두리(--edge)를 정하고 모양별로 씁니다 */
+.tone-plain {
+  --bg: var(--sheet);
+  --edge: var(--line);
+}
+
+.tone-wall {
+  --bg: var(--wall);
+  --edge: var(--line-strong);
+}
+
+.tone-current {
+  --bg: var(--hl-yellow);
+  --edge: var(--ink);
+  --edge-w: 2px;
+}
+
+.tone-queued {
+  --bg: var(--hl-blue);
+  --edge: var(--pen);
+  --edge-w: 2px;
+  --edge-style: dashed;
+}
+
+.tone-visited {
+  --bg: var(--hl-green);
+  --edge: var(--hl-green-line);
+}
+
+.tone-path {
+  --bg: var(--hl-pink);
+  --edge: var(--hl-pink-line);
+}
+
+.tone-trail {
+  --bg: var(--hl-line);
+  --edge: var(--trail-line);
+}
+
+.tone-explored {
+  --bg: var(--line-soft);
+  --edge: var(--line);
+  --fg: var(--ink-3);
+}
+
+.tone-chosen {
+  --bg: var(--hl-blue);
+  --edge: var(--pen);
+  --edge-w: 2px;
+}
+
+.tone-good {
+  --bg: var(--hl-green);
+  --edge: var(--green-ink);
+  --edge-w: 2px;
+}
+
+.tone-bad {
+  --bg: var(--hl-orange);
+  --edge: var(--red-pen);
+  --edge-w: 2px;
+}
+
+.tone-muted {
+  --bg: var(--line-soft);
+  --edge: var(--line-strong);
+  --edge-w: 1.5px;
+  --fg: var(--ink-3);
+}
+
+.it-cell,
+.it-token,
+.it-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--edge-w, 1px) var(--edge-style, solid) var(--edge);
+  background: var(--bg);
+  color: var(--fg, var(--ink));
+  font-family: var(--font-mono);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.it-cell {
+  border-radius: 10px;
+  font-size: 18px;
+}
+
+.it-token {
+  z-index: 5;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.it-bar {
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--inset);
+  font-size: 13px;
+}
+
+.it-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--bg);
+  transition: width var(--t-set, 260ms) ease;
+}
+
+.it-bar .it-label {
+  position: relative;
+  margin-left: 8px;
+}
+
+.it-zone {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 10px;
+  background: var(--sheet);
+}
+
+.it-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg, var(--ink-2));
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.it-ring {
+  z-index: 4;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.it-label {
+  display: inline-block;
+}
+
+.it-label:empty,
+.it-tag:empty,
+.it-sub:empty {
+  display: none;
+}
+
+.it-tag,
+.it-sub {
+  position: absolute;
+  font: 700 9.5px/1 var(--font-sans);
+}
+
+.it-tag {
+  top: 4px;
+  left: 5px;
+  color: var(--ink-2);
+}
+
+.it-sub {
+  right: 4px;
+  bottom: 3px;
+  color: var(--red-pen);
+}
+
+.it-line {
+  z-index: 3;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.it-line polyline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.it-line.tone-path polyline {
+  stroke: var(--path-line);
+  stroke-opacity: 0.9;
+}
+
+.it-line.tone-trail polyline {
+  stroke-opacity: 0.4;
+  stroke-width: 3;
+}
+
+/* --- 덧그림: 화살표와 판정 표시 --- */
+
+.stage-marks {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.stage-mark.is-new {
+  --mark: var(--pen);
+}
+
+.stage-mark.is-seen {
+  --mark: var(--ink-3);
+}
+
+.stage-mark.is-wall,
+.stage-mark.is-bad {
+  --mark: var(--red-pen);
+}
+
+.stage-mark.is-good {
+  --mark: var(--green-ink);
+}
+
+.arrow line {
+  stroke: var(--mark);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.arrow polygon {
+  fill: var(--mark);
+}
+
+.badge {
+  position: absolute;
+  z-index: 8;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: var(--mark);
+  color: var(--sheet);
+  font: 700 11.5px/1.5 var(--font-sans);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, 0);
+}
+
+/* ==========================================================================
+   재생 화면 (Player): 마디 표시줄, 자막, 흐르는 진행 막대
+   ========================================================================== */
+
+.phase-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.phase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+
+.phase-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  color: var(--ink-3);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.phase-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--line-soft);
+  color: var(--ink-2);
+  font: 600 11.5px/1 var(--font-mono);
+}
+
+.phase-list li.is-active {
+  border-color: var(--ink);
+  background: var(--hl-yellow);
+  color: var(--ink);
+}
+
+.phase-list li.is-active .phase-num {
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.phase-list li.is-done {
+  color: var(--ink-2);
+}
+
+.phase-list li.is-done .phase-num {
+  background: var(--hl-green);
+}
+
+/* 한 번만 나오는 마디(시작, 도착 …)는 오른쪽에 빨간펜 글씨로 잠깐 */
+.phase-chip {
+  margin-left: auto;
+  color: var(--red-pen);
+  font: 400 26px/1 var(--font-pen);
+  animation: rise-in 0.3s ease-out both;
+}
+
+.readout {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 6px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.readout-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.step-count {
+  font: 600 12.5px/1.5 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.work-count {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-label {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.caption {
+  min-height: 3em;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.caption-text {
+  display: block;
+  animation: rise-in 0.24s ease-out;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* 타임라인 막대는 연출 중에 그 단계 길이 동안 끊기지 않고 흐릅니다. 흐르는 동안에는 손잡이를 숨깁니다 */
+@property --progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+.timeline.is-flowing {
+  transition: --progress var(--flow, 0ms) linear;
+}
+
+.timeline.is-flowing::-webkit-slider-thumb {
+  opacity: 0;
+}
+
+.timeline.is-flowing::-moz-range-thumb {
+  opacity: 0;
+}
+
+/* ==========================================================================
+   임시 화면: 문제 목록과 문제 화면(Task 6·10에서 바뀜)
+   ========================================================================== */
+
+.solo-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.solo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+
+.solo-list {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+}

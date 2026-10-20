@@ -1,19 +1,19 @@
 import React from 'react';
-import { Pause, Play, Repeat, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
+import { Pause, Play, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 
 interface PlayerControlsProps {
-  currentStep: number;
+  currentStep: number; // -1이면 시작 전
   totalSteps: number;
   isPlaying: boolean;
+  isAnimating: boolean; // 연출 중이면 막대가 flowMs 동안 다음 단계 끝까지 흐른다
+  flowMs: number;
   speed: number;
-  isLooping: boolean;
   onPlayPause: () => void;
   onPrevStep: () => void;
   onNextStep: () => void;
   onSeek: (stepIndex: number) => void;
   onSpeedChange: (speed: number) => void;
   onReset: () => void;
-  onToggleLoop: () => void;
 }
 
 const SPEEDS = [0.5, 1, 1.5, 2];
@@ -22,30 +22,30 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   currentStep,
   totalSteps,
   isPlaying,
+  isAnimating,
+  flowMs,
   speed,
-  isLooping,
   onPlayPause,
   onPrevStep,
   onNextStep,
   onSeek,
   onSpeedChange,
   onReset,
-  onToggleLoop,
 }) => {
-  const progress = totalSteps > 1 ? (currentStep / (totalSteps - 1)) * 100 : 0;
+  const progress = ((currentStep + 1 + (isAnimating ? 1 : 0)) / totalSteps) * 100;
 
   return (
     <div className="controls">
       <input
         type="range"
-        className="timeline"
-        min={0}
+        className={isAnimating ? 'timeline is-flowing' : 'timeline'}
+        min={-1}
         max={totalSteps - 1}
         value={currentStep}
         onChange={(e) => onSeek(Number(e.target.value))}
         aria-label="단계 이동"
-        aria-valuetext={`${totalSteps}단계 중 ${currentStep + 1}단계`}
-        style={{ '--progress': `${progress}%` } as React.CSSProperties}
+        aria-valuetext={currentStep < 0 ? '시작 전' : `${totalSteps}단계 중 ${currentStep + 1}단계`}
+        style={{ '--progress': `${progress}%`, '--flow': `${flowMs}ms` } as React.CSSProperties}
       />
 
       <div className="controls-row">
@@ -57,7 +57,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             type="button"
             className="icon-btn"
             onClick={onPrevStep}
-            disabled={currentStep <= 0}
+            disabled={currentStep < 0 && !isAnimating}
             aria-label="이전 단계 (←)"
             title="이전 단계 (←)"
           >
@@ -102,10 +102,6 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
               </button>
             ))}
           </div>
-          <button type="button" className="btn-outline loop-btn" aria-pressed={isLooping} onClick={onToggleLoop}>
-            <Repeat size={16} aria-hidden="true" />
-            반복
-          </button>
         </div>
       </div>
     </div>
