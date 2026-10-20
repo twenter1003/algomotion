@@ -20,6 +20,7 @@ test('동작은 차례로, together는 같이', () => {
 test('다음 마디는 PHASE_GAP 뒤, 결과 단계는 KEYFRAME_TAIL', () => {
   const p = planStep(step([{ label: 'a', caption: 'c', actions: [] }, { label: 'b', caption: 'd', actions: [{ type: 'unfocus' }] }], true));
   assert.deepEqual([p.phases[1].start, p.phases[1].end, p.total], [640, 1140, 2340]);
+  assert.equal(p.phases[1].actions[0].start, 640); // 동작 시각도 단계 시작부터 센 값(무대는 이 시각에 일을 건다)
 });
 
 test('움직임 줄이기는 120ms 상한', () => {

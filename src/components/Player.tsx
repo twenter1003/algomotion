@@ -16,6 +16,7 @@ interface PlayerProps {
 }
 
 const NO_VARIABLES: Record<string, string | number> = {};
+const IDLE = { step: -1, phase: 0 }; // 연출하는 단계가 없음
 
 // 마디 표시줄, 무대, 자막, 흐르는 진행 막대, 조작부와 단축키
 export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFinish, onLinesChange, onVariablesChange }) => {
@@ -23,7 +24,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
   const [s, dispatch] = useReducer(playerReducer, total, initialPlayer);
   const stageRef = useRef<Stage | null>(null);
   const [reducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [live, setLive] = useState({ step: -1, phase: 0 }); // 연출 중인 단계와 그 마디
+  const [live, setLive] = useState(IDLE); // 연출 중인 단계와 그 마디
   const cycle = useMemo(() => cycleLabels(viz), [viz]);
 
   // 연출을 시작할 때 읽는 값: 속도는 다음 단계부터 적용하고, 알림 함수는 늘 최신 것을 쓴다
@@ -51,6 +52,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     return () => {
       alive = false;
       stage.cancel();
+      setLive(IDLE); // 같은 단계를 다시 연출할 때(← 뒤 →) 지난 연출의 마디·자막·코드 줄이 잠깐 보이지 않게
     };
   }, [viz, s.index, s.animating]);
 
