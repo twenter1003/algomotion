@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { ChevronRight, ExternalLink, X } from 'lucide-react';
 import { findProblem, TIER_NAMES } from '../catalog';
-import type { Language, Problem, ProblemMeta } from '../engine/model';
+import type { CategoryId, Language, Problem, ProblemMeta } from '../engine/model';
 import { progress } from '../progress';
 import { problemHref } from '../route';
 import { ApproachNotes } from './ApproachNotes';
@@ -127,14 +127,34 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
   const [drawerOpen, setDrawerOpen] = useState(false);
   if (wide && drawerOpen) setDrawerOpen(false); // 넓어지면 서랍은 닫힌 것으로 둔다(다시 좁아져도 저절로 열리지 않게)
   const [seen, setSeen] = useState(() => progress.seen());
+  // 옆 메뉴의 검색어와 유형별 펼침 선택. 옆 메뉴는 접으면 사라지고 1280px을 넘나들면 서랍과 왼쪽 칸 사이에서 새로 만들어지므로 여기서 쥔다
+  const [query, setQuery] = useState('');
+  const [choice, setChoice] = useState<ReadonlyMap<CategoryId, boolean>>(new Map());
+  const [shownId, setShownId] = useState(id);
   const found = findProblem(id);
+  // 다른 문제로 가면 그 문제의 유형은 전에 접었더라도 다시 펼친다(옆 메뉴가 닫혀 있는 동안 간 것도). 그리는 중에 바로 고쳐야
+  // 옆 메뉴가 접힌 채 한 번 그려지지 않고, 그 안의 scrollIntoView가 같은 그림에서 지금 문제를 찾는다
+  if (shownId !== id) {
+    setShownId(id);
+    if (found) setChoice((m) => new Map([...m].filter(([categoryId]) => categoryId !== found.category.id)));
+  }
 
   if (!found) return <Notice text="문제를 찾을 수 없습니다." />;
   const { category, meta, index } = found;
   if (!meta.load) return <Notice text="아직 준비 중인 문제입니다." />;
 
   const listShown = wide ? !collapsed : drawerOpen;
-  const sidebar = <Sidebar currentId={id} seen={seen} onPick={() => setDrawerOpen(false)} />;
+  const sidebar = (
+    <Sidebar
+      currentId={id}
+      seen={seen}
+      query={query}
+      onQueryChange={setQuery}
+      choice={choice}
+      onChoose={(categoryId, open) => setChoice((m) => new Map(m).set(categoryId, open))}
+      onPick={() => setDrawerOpen(false)}
+    />
+  );
 
   return (
     <main className={`problem-page${wide && !collapsed ? ' has-sidebar' : ''}`}>
