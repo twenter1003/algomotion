@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { AlgorithmStep, Phase } from '../src/engine/model.ts';
-import { cycleLabels, planStep } from '../src/engine/timeline.ts';
+import { cycleLabels, planStep, planTicks } from '../src/engine/timeline.ts';
 import { LOADERS } from '../src/problems/registry.ts';
 
 const step = (phases: Phase[], isKeyframe = false): AlgorithmStep => ({ title: 't', phases, scene: { width: 1, height: 1, items: [] },
@@ -45,4 +45,15 @@ test('다음 동작은 앞 묶음(together 포함)이 다 끝난 뒤', () => {
 test('cycleLabels: 게임 맵 정석은 꺼내기, 살피기, 넣기', async () => {
   const viz = (await LOADERS['game-map']()).approaches[0].visualize();
   assert.deepEqual(cycleLabels(viz), ['꺼내기', '살피기', '넣기']);
+});
+
+test('planTicks: 단계 안의 마디와 동작을 세분화된 틱(프레임)으로 나누고 각 단계 끝 장면이 일치한다', async () => {
+  const viz = (await LOADERS['game-map']()).approaches[0].visualize();
+  const ticks = planTicks(viz);
+  assert.ok(ticks.length > viz.steps.length * 2, `틱 수(${ticks.length})가 단계 수(${viz.steps.length})보다 충분히 세분화되어야 함`);
+  for (let s = 0; s < viz.steps.length; s++) {
+    const stepTicks = ticks.filter((t) => t.stepIndex === s);
+    assert.ok(stepTicks.length >= 1);
+    assert.deepEqual(stepTicks.at(-1)!.scene, viz.steps[s].scene);
+  }
 });

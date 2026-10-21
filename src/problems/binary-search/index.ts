@@ -4,4 +4,8 @@ import type { Problem } from '../../engine/model.ts';
 export const loaders: Record<string, () => Promise<Problem>> = {
   immigration: () => import('./immigration.ts').then((m) => m.default),
   'stepping-stones': () => import('./stepping-stones.ts').then((m) => m.default),
+  'rank-search': () => import('./rank-search.ts').then((m) => m.default),
+  'puzzle-challenge': () => import('./puzzle-challenge.ts').then((m) => m.default),
+  'gold-silver': () => import('./gold-silver.ts').then((m) => m.default),
+  'fifo-scheduling': () => import('./fifo-scheduling.ts').then((m) => m.default),
 };

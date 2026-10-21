@@ -4,4 +4,8 @@ import type { Problem } from '../../engine/model.ts';
 export const loaders: Record<string, () => Promise<Problem>> = {
   'phone-book': () => import('./phone-book.ts').then((m) => m.default),
   clothes: () => import('./clothes.ts').then((m) => m.default),
+  'best-album': () => import('./best-album.ts').then((m) => m.default),
+  'discount-event': () => import('./discount-event.ts').then((m) => m.default),
+  'roll-cake': () => import('./roll-cake.ts').then((m) => m.default),
+  'open-chat': () => import('./open-chat.ts').then((m) => m.default),
 };

@@ -1,5 +1,5 @@
 import type { Action, AlgorithmStep, Item, Point, Rect, Scene } from './model.ts';
-import { DUR, planStep } from './timeline.ts';
+import { type ArrowMark, DUR, planStep, type Tick, TICK_DUR } from './timeline.ts';
 
 // DOM 무대. 장면의 물체마다 data-id를 단 절대 위치 요소를 하나씩 두고,
 // render는 장면을 그대로, tween은 CSS 전환으로 이어서, play는 한 단계를 timeline의 시각표대로 연출한다.
@@ -45,14 +45,13 @@ export class Stage {
 
   // 진행 중 연출을 취소하고 장면을 그대로 그린다
   render(scene: Scene): void {
-    this.cancel();
-    const { host } = this;
-    host.classList.add('is-still');
-    host.classList.remove('is-focus', 'is-tween');
-    this.sync(scene, false);
-    for (const { el } of this.nodes.values()) el.classList.remove('in-focus');
-    host.getBoundingClientRect(); // 전환 없이 그린 모습을 확정한 뒤 전환을 다시 켠다
-    host.classList.remove('is-still');
+    this.syncState(scene, null, []);
+  }
+
+  // 틱(프레임)의 끝난 모습(장면 + focus + 화살표/배지)을 전환 없이 그대로 그린다
+  renderTick(tick: Tick | null, initial: Scene): void {
+    if (!tick) this.syncState(initial, null, []);
+    else this.syncState(tick.scene, tick.focus, tick.marks);
   }
 
   // 같은 id끼리 위치·색·채움을 CSS 전환으로 잇는다. 새 물체는 나타나고 없어진 물체는 사라진다
@@ -66,6 +65,67 @@ export class Stage {
     fresh.forEach((el) => el.classList.add('is-entering'));
     host.getBoundingClientRect();
     fresh.forEach((el) => el.classList.remove('is-entering'));
+  }
+
+  // 틱(프레임) 상태를 CSS 전환으로 잇는다 (나란히 비교 경주 등)
+  tweenTick(tick: Tick | null, initial: Scene): void {
+    if (!tick) {
+      this.render(initial);
+      return;
+    }
+    this.cancel();
+    const { host } = this;
+    host.classList.remove('is-still');
+    host.classList.add('is-tween');
+    const fresh = this.sync(tick.scene, true);
+    host.classList.toggle('is-focus', tick.focus !== null);
+    for (const [id, { el }] of this.nodes) {
+      el.classList.toggle('in-focus', tick.focus !== null && tick.focus.includes(id));
+    }
+    for (const m of tick.marks) this.arrow(m, 0);
+    fresh.forEach((el) => el.classList.add('is-entering'));
+    host.getBoundingClientRect();
+    fresh.forEach((el) => el.classList.remove('is-entering'));
+  }
+
+  // 세분화된 한 틱(프레임)을 연출한다. 직전 틱 상태에서 시작해 이 틱의 동작만 보여 주고 끝난 상태로 맞춘다
+  playTick(tick: Tick, speed: number): Promise<boolean> {
+    this.syncState(tick.beforeScene, tick.beforeFocus, tick.beforeMarks);
+    const { host } = this;
+    const k = 1 / speed;
+    host.style.setProperty('--t-set', `${TICK_DUR.set * k}ms`);
+    host.style.setProperty('--t-fade', `${TICK_DUR.focus * k}ms`);
+    return new Promise((resolve) => {
+      this.finish = resolve;
+      const cues = new Map<number, (() => void)[]>();
+      const cue = (ms: number, fn: () => void) => cues.set(ms, [...(cues.get(ms) ?? []), fn]);
+      for (const { action, start, duration } of tick.actions) {
+        cue(start, () => this.apply(action, duration * k));
+      }
+      cue(tick.duration, () => {
+        this.finish = undefined;
+        this.syncState(tick.scene, tick.focus, tick.marks);
+        resolve(true);
+      });
+      for (const [ms, fns] of cues) {
+        this.timers.push(window.setTimeout(() => fns.forEach((fn) => fn()), ms * k));
+      }
+    });
+  }
+
+  private syncState(scene: Scene, focus: string[] | null, marks: ArrowMark[]): void {
+    this.cancel();
+    const { host } = this;
+    host.classList.add('is-still');
+    host.classList.remove('is-tween');
+    this.sync(scene, false);
+    host.classList.toggle('is-focus', focus !== null);
+    for (const [id, { el }] of this.nodes) {
+      el.classList.toggle('in-focus', focus !== null && focus.includes(id));
+    }
+    for (const m of marks) this.arrow(m, 0);
+    host.getBoundingClientRect(); // 전환 없이 그린 모습을 확정한 뒤 전환을 다시 켠다
+    host.classList.remove('is-still');
   }
 
   // 한 단계를 연출한다. 끝까지 가면 step.scene으로 맞추고 true, 도중에 취소되면 false
@@ -207,7 +267,7 @@ export class Stage {
         this.arrow(a, ms);
         break;
       case 'clearMarks':
-        this.host.querySelectorAll('.stage-mark').forEach((el) => this.leave(el, ms));
+        this.host.querySelectorAll('.stage-mark:not(.is-leaving)').forEach((el) => this.leave(el, ms));
         break;
       case 'trace':
         this.trace(a, ms);
@@ -289,6 +349,7 @@ export class Stage {
     badge.textContent = a.label;
     Object.assign(badge.style, { left: px(x2), top: px(to.item.rect.y - 11) });
     this.host.append(badge);
+    if (ms <= 0) return;
     if (!this.motion) {
       for (const el of [g, badge]) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms });
       return;

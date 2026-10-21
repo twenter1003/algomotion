@@ -4,4 +4,8 @@ import type { Problem } from '../../engine/model.ts';
 export const loaders: Record<string, () => Promise<Problem>> = {
   'feature-development': () => import('./feature-development.ts').then((m) => m.default),
   'valid-parentheses': () => import('./valid-parentheses.ts').then((m) => m.default),
+  process: () => import('./process.ts').then((m) => m.default),
+  'bridge-truck': () => import('./bridge-truck.ts').then((m) => m.default),
+  'stock-price': () => import('./stock-price.ts').then((m) => m.default),
+  'next-greater': () => import('./next-greater.ts').then((m) => m.default),
 };

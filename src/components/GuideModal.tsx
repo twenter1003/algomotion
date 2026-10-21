@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, LayoutGrid, ListOrdered, Scale, X } from 'lucide-react';
+import { Film, LayoutGrid, ListOrdered, Maximize2, Scale, X } from 'lucide-react';
 
 interface GuideModalProps {
   isOpen: boolean;
@@ -39,8 +39,8 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
           <li>
             <ListOrdered size={20} aria-hidden="true" />
             <div>
-              <h3>마디</h3>
-              <p>한 단계는 꺼내기 → 살피기 → 넣기처럼 몇 마디로 나뉘어 차례로 움직입니다. 그림 위쪽에 지금 마디가 표시되고, 코드에서는 그 마디의 줄이 칠해집니다.</p>
+              <h3>틱(프레임)과 마디</h3>
+              <p>한 단계는 꺼내기 → 살피기 → 넣기 같은 마디와 더 잘게 나뉜 틱(프레임)으로 움직입니다. &lsquo;1틱씩 끊기&rsquo;를 켜거나 화살표 키를 누르면 화살표 판정 하나씩 천천히 끊어 볼 수 있습니다.</p>
             </div>
           </li>
           <li>
@@ -54,7 +54,14 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
             <Scale size={20} aria-hidden="true" />
             <div>
               <h3>나란히 비교</h3>
-              <p>&lsquo;나란히 비교&rsquo;를 누르면 세 풀이가 같은 박자로 동시에 돌아갑니다. 판마다 한 일의 양이 올라가서 어느 풀이가 더 많이 일하는지 바로 보입니다.</p>
+              <p>&lsquo;나란히 비교&rsquo;를 누르면 세 풀이가 같은 박자로 동시에 돌아갑니다. 일시정지하거나 한 틱씩 넘기며 어느 풀이가 더 많이 일하는지 비교할 수 있습니다.</p>
+            </div>
+          </li>
+          <li>
+            <Maximize2 size={20} aria-hidden="true" />
+            <div>
+              <h3>컴포넌트 크기 조절</h3>
+              <p>각 상자 아래쪽 손잡이를 위아래로 끌거나(−/+ 버튼), 칸 사이 세로 분할선을 좌우로 끌어 무대·코드·변수·목록 크기를 자유롭게 조절할 수 있습니다.</p>
             </div>
           </li>
           <li>
@@ -78,6 +85,12 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
             <dt>
               <kbd>←</kbd> <kbd>→</kbd>
             </dt>
+            <dd>이전, 다음 틱(프레임)</dd>
+          </div>
+          <div>
+            <dt>
+              <kbd>Shift</kbd>+<kbd>←</kbd> <kbd>→</kbd>
+            </dt>
             <dd>이전, 다음 단계</dd>
           </div>
           <div>
@@ -85,12 +98,6 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
               <kbd>R</kbd>
             </dt>
             <dd>처음으로</dd>
-          </div>
-          <div>
-            <dt>
-              <kbd>Esc</kbd>
-            </dt>
-            <dd>이 창 닫기</dd>
           </div>
         </dl>
 

@@ -8,6 +8,7 @@
 .stage-view {
   flex: 1;
   min-width: 0;
+  overflow-x: auto;
 }
 
 .stage-frame {
@@ -404,6 +405,16 @@
 
 .step-count {
   font: 600 12.5px/1.5 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tick-count {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: var(--inset);
+  color: var(--pen-dark);
+  font: 600 11.5px/1.4 var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
