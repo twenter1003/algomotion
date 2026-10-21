@@ -7,13 +7,12 @@ interface StageViewProps {
   stageRef: React.RefObject<Stage | null>;
   maxScale: number;
   maxHeight?: number; // 판이 쓸 수 있는 높이(px). 주면 배율을 높이로도 줄이되 MIN_FIT 밑으로는 줄이지 않는다
-  zoom?: number; // 사용자가 직접 조절한 배율(기본 1)
 }
 
 const MIN_FIT = 0.5; // RaceView의 MIN_SIDE_SCALE과 같은 값: 이보다 작은 판은 쓰지 않는다
 
-// Stage를 React에 붙이는 껍데기. 무대 안 DOM은 Stage가 맡고, 여기서는 칸 폭(과 maxHeight, zoom)에 맞춰 배율만 정한다.
-export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale, maxHeight, zoom = 1 }) => {
+// Stage를 React에 붙이는 껍데기. 무대 안 DOM은 Stage가 맡고, 여기서는 칸 폭(과 maxHeight)에 맞춰 배율만 정한다.
+export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale, maxHeight }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [boxWidth, setBoxWidth] = useState(0);
@@ -40,9 +39,8 @@ export const StageView: React.FC<StageViewProps> = ({ scene, stageRef, maxScale,
   }, []);
 
   const heightFit = maxHeight === undefined ? Infinity : maxHeight / scene.height;
-  const baseScale = boxWidth ? Math.min(maxScale, boxWidth / scene.width, Math.max(MIN_FIT, heightFit)) : 1;
-  const scale = Math.max(0.35, Math.min(2.2, baseScale * zoom));
-  // MIN_FIT이나 배율 확대 때문에 칸이 준 높이에 다 안 들어가는 판. 붙여 둔 조작부가 자막을 가리지 않게 CSS가 알아야 한다(index.css .is-cramped)
+  const scale = boxWidth ? Math.min(maxScale, boxWidth / scene.width, Math.max(MIN_FIT, heightFit)) : 1;
+  // MIN_FIT 때문에 칸이 준 높이에 다 안 들어가는 판. 붙여 둔 조작부가 자막을 가리지 않게 CSS가 알아야 한다(index.css .is-cramped)
   const cramped = scale > heightFit;
   return (
     <div className="stage-view" ref={boxRef}>

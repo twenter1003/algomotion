@@ -3,9 +3,7 @@ import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
 import type { Approach, Problem, Visualization } from '../engine/model';
 import type { Stage } from '../engine/stage';
 import { planTicks, type Tick } from '../engine/timeline';
-import { layoutStore, useLayoutSizes } from '../layoutStore';
 import { ApproachLabel } from './ApproachLabel';
-import { ResizeHandle } from './ResizeHandle';
 import { StageView } from './StageView';
 
 const BASE_BEAT = 860; // 1× 기준 1틱당 860ms (여유 있게 비교할 수 있는 박자)
@@ -22,11 +20,10 @@ interface RaceBoardProps {
   ticks: Tick[];
   tick: number;
   workUnit: string;
-  zoom: number;
 }
 
 // 작은 판 하나: 틱마다 다음 프레임 장면으로 부드럽게 넘어가고, 마지막 틱에 닿으면 머리에 '끝!' 도장
-const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, ticks, tick, workUnit, zoom }) => {
+const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, ticks, tick, workUnit }) => {
   const stageRef = useRef<Stage | null>(null);
   const last = ticks.length - 1;
   const index = Math.min(tick, last);
@@ -46,7 +43,7 @@ const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, ticks, tick, workU
         <span className={index === last && last >= 0 ? 'race-stamp is-done' : 'race-stamp'}>끝!</span>
       </div>
       <div className="race-visual">
-        <StageView scene={viz.initial} stageRef={stageRef} maxScale={1} zoom={zoom} />
+        <StageView scene={viz.initial} stageRef={stageRef} maxScale={1} />
       </div>
       <p className="race-foot">
         <span>
@@ -61,7 +58,7 @@ const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, ticks, tick, workU
   );
 };
 
-// 나란히 비교: 세 풀이를 세분화된 틱 박자로 동시에 돌린다. 일시정지, 한 틱 이동, 속도·크기 조절 지원
+// 나란히 비교: 세 풀이를 세분화된 틱 박자로 동시에 돌린다. 일시정지, 한 틱 이동, 속도 조절 지원
 export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = ({ problem, vizs }) => {
   const allTicks = useMemo(() => vizs.map((v) => planTicks(v)), [vizs]);
   const end = Math.max(...allTicks.map((t) => t.length)) - 1;
@@ -70,8 +67,6 @@ export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = (
   const [speed, setSpeed] = useState(1);
   const boardsRef = useRef<HTMLDivElement>(null);
   const [boardsWidth, setBoardsWidth] = useState(0);
-  const sizes = useLayoutSizes();
-  const customRaceH = sizes.heights.race;
   const activePlaying = playing && tick < end;
 
   useEffect(() => {
@@ -97,53 +92,19 @@ export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = (
     <section className="panel race" aria-label="나란히 비교">
       <div className="race-bar">
         <span className="race-input">{problem.demo.label}</span>
-        <div className="race-bar-tools">
-          <div className="stage-zoom" role="group" aria-label="비교 무대 배율 조절">
-            <button
-              type="button"
-              className="zoom-btn"
-              onClick={() => layoutStore.setStageZoom(sizes.stageZoom - 0.15)}
-              disabled={sizes.stageZoom <= 0.5}
-              aria-label="무대 축소"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              className="zoom-reset-btn"
-              onClick={() => layoutStore.setStageZoom(1)}
-              aria-label="무대 배율 초기화"
-            >
-              {Math.round(sizes.stageZoom * 100)}%
-            </button>
-            <button
-              type="button"
-              className="zoom-btn"
-              onClick={() => layoutStore.setStageZoom(sizes.stageZoom + 0.15)}
-              disabled={sizes.stageZoom >= 2}
-              aria-label="무대 확대"
-            >
-              +
-            </button>
-          </div>
-          <button
-            type="button"
-            className="btn-outline head-btn"
-            onClick={() => {
-              setTick(-1);
-              setPlaying(true);
-            }}
-          >
-            <span aria-hidden="true">↺</span> 다시 경주
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn-outline head-btn"
+          onClick={() => {
+            setTick(-1);
+            setPlaying(true);
+          }}
+        >
+          <span aria-hidden="true">↺</span> 다시 경주
+        </button>
       </div>
 
-      <div
-        ref={boardsRef}
-        className={stacked ? 'race-boards is-stacked' : 'race-boards'}
-        style={customRaceH !== undefined ? { height: customRaceH, overflowY: 'auto' } : undefined}
-      >
+      <div ref={boardsRef} className={stacked ? 'race-boards is-stacked' : 'race-boards'}>
         {boardsWidth > 0 &&
           problem.approaches.map((approach, i) => (
             <RaceBoard
@@ -153,7 +114,6 @@ export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = (
               ticks={allTicks[i]}
               tick={tick}
               workUnit={problem.workUnit}
-              zoom={sizes.stageZoom}
             />
           ))}
       </div>
@@ -253,8 +213,6 @@ export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = (
           </div>
         </div>
       </div>
-
-      <ResizeHandle id="race" targetRef={boardsRef} label="나란히 비교 무대" min={200} max={1200} />
     </section>
   );
 };

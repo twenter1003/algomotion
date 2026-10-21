@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
-import { ChevronRight, ExternalLink, RotateCcw, X } from 'lucide-react';
+import { ChevronRight, ExternalLink, X } from 'lucide-react';
 import { findProblem, TIER_NAMES } from '../catalog';
 import type { CategoryId, Language, Problem, ProblemMeta } from '../engine/model';
 import { progress } from '../progress';
@@ -10,10 +10,8 @@ import { ApproachNotes } from './ApproachNotes';
 import { ApproachTabs } from './ApproachTabs';
 import { CodePanel } from './CodePanel';
 import { CompareBars } from './CompareBars';
-import { layoutStore, useLayoutSizes } from '../layoutStore';
 import { Player } from './Player';
 import { RaceView } from './RaceView';
-import { ColResizer, ResizeHandle } from './ResizeHandle';
 import { Sidebar } from './Sidebar';
 
 type Variables = Record<string, string | number>;
@@ -121,36 +119,31 @@ const PagerButton: React.FC<{ to?: ProblemMeta; label: string }> = ({ to, label 
 );
 
 // 문제 화면: 옆 메뉴 | 가운데(제목 → 문제 보기 → 풀이 탭 → 재생 또는 나란히 비교 → 평가 → 비교 막대) | 코드 칸.
+// '☰ 문제 목록', 경로, 이전/다음 문제는 앱 머리줄(tools)에 단다. 넓은 화면에서 재생 화면이 한 화면에 들어갈 높이를 남기려고 한 줄로 합친다.
+// 문제가 바뀌어도 이 껍데기(옆 메뉴, 머리줄 도구)는 그대로 두고, 본문만 key로 새로 시작한다.
 export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = ({ id, tools }) => {
   const wide = useSyncExternalStore(watchWide, isWide);
-  const sizes = useLayoutSizes();
   const [collapsed, setCollapsed] = useState(false); // 넓은 화면에서 옆 메뉴를 접었는지
   const [drawerOpen, setDrawerOpen] = useState(false);
-  if (wide && drawerOpen) setDrawerOpen(false);
+  if (wide && drawerOpen) setDrawerOpen(false); // 넓어지면 서랍은 닫힌 것으로 둔다(다시 좁아져도 저절로 열리지 않게)
   const [seen, setSeen] = useState(() => progress.seen());
+  // 옆 메뉴의 검색어와 유형별 펼침 선택. 옆 메뉴는 접으면 사라지고 1280px을 넘나들면 서랍과 왼쪽 칸 사이에서 새로 만들어지므로 여기서 쥔다
   const [query, setQuery] = useState('');
   const [choice, setChoice] = useState<ReadonlyMap<CategoryId, boolean>>(new Map());
   const [shownId, setShownId] = useState(id);
   const found = findProblem(id);
-
+  // 다른 문제로 가면 그 문제의 유형은 전에 접었더라도 다시 펼친다(옆 메뉴가 닫혀 있는 동안 간 것도). 그리는 중에 바로 고쳐야
+  // 옆 메뉴가 접힌 채 한 번 그려지지 않고, 그 안의 scrollIntoView가 같은 그림에서 지금 문제를 찾는다
   if (shownId !== id) {
     setShownId(id);
     if (found) setChoice((m) => new Map([...m].filter(([categoryId]) => categoryId !== found.category.id)));
   }
-
-  // 전체 스크롤 모드면 .app.is-problem의 100dvh 고정을 풀 수 있도록 클래스를 동기화한다
-  useEffect(() => {
-    const app = document.querySelector('.app');
-    app?.classList.toggle('is-free-scroll', sizes.freeScroll);
-    return () => app?.classList.remove('is-free-scroll');
-  }, [sizes.freeScroll]);
 
   if (!found) return <Notice text="문제를 찾을 수 없습니다." />;
   const { category, meta, index } = found;
   if (!meta.load) return <Notice text="아직 준비 중인 문제입니다." />;
 
   const listShown = wide ? !collapsed : drawerOpen;
-  const hasCustom = layoutStore.hasCustomSizes(sizes);
   const sidebar = (
     <Sidebar
       currentId={id}
@@ -163,19 +156,8 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
     />
   );
 
-  const pageClass = [
-    'problem-page',
-    wide && !collapsed ? 'has-sidebar' : '',
-    sizes.freeScroll ? 'is-free-scroll' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <main
-      className={pageClass}
-      style={{ '--sidebar-w': `${sizes.sidebarW}px`, '--code-w': `${sizes.codeW}px` } as React.CSSProperties}
-    >
+    <main className={`problem-page${wide && !collapsed ? ' has-sidebar' : ''}`}>
       {tools &&
         createPortal(
           <div className="crumbs-row">
@@ -191,25 +173,6 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
               {TIER_NAMES[category.tier]} › {category.name} › {index + 1}/{category.problems.length}
             </p>
             <div className="pager">
-              <button
-                type="button"
-                className="btn-outline head-btn"
-                aria-pressed={sizes.freeScroll}
-                onClick={() => layoutStore.setFreeScroll(!sizes.freeScroll)}
-                title="칸마다 따로 스크롤할지, 페이지 전체를 길게 펼쳐 스크롤할지 전환합니다"
-              >
-                {sizes.freeScroll ? '전체 스크롤 켜짐' : '전체 스크롤'}
-              </button>
-              {hasCustom && (
-                <button
-                  type="button"
-                  className="btn-outline head-btn"
-                  onClick={() => layoutStore.resetAll()}
-                  title="조절한 모든 컴포넌트 크기와 폭·배율을 기본값으로 되돌립니다"
-                >
-                  <RotateCcw size={13} aria-hidden="true" /> 크기 초기화
-                </button>
-              )}
               <PagerButton to={category.problems[index - 1]} label="← 이전 문제" />
               <PagerButton to={category.problems[index + 1]} label="다음 문제 →" />
             </div>
@@ -218,12 +181,7 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
         )}
 
       {wide ? (
-        !collapsed && (
-          <>
-            {sidebar}
-            <ColResizer kind="sidebar" label="문제 목록" />
-          </>
-        )
+        !collapsed && sidebar
       ) : (
         <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
           {sidebar}
@@ -259,9 +217,6 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
   const [language, setLanguage] = useState<Language>('python');
   const [lines, setLines] = useState<Record<Language, number[]> | null>(null);
   const [vars, setVars] = useState<{ now: Variables; prev?: Variables }>({ now: NO_VARIABLES });
-  const detailsBodyRef = useRef<HTMLDivElement>(null);
-  const sizes = useLayoutSizes();
-  const customDetailsH = sizes.heights.details;
 
   useEffect(() => {
     let alive = true;
@@ -280,6 +235,7 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
     };
   }, [id, load]);
 
+  // 세 풀이의 시각화는 한 번만 만든다(탭, 나란히 비교, 비교 막대가 같이 씀)
   const vizs = useMemo(() => problem?.approaches.map((a) => a.visualize()), [problem]);
 
   if (failed) return <Failed meta={meta} text="문제를 불러오지 못했습니다." />;
@@ -294,7 +250,9 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
 
   const approach = problem.approaches[active];
   const { description } = problem;
+  // Player가 보이는 변수를 바꿀 때마다 앞서 보이던 값을 함께 둔다(코드 칸의 '바뀜' 표시)
   const showVariables = (now: Variables) => setVars((v) => (v.now === now ? v : { now, prev: v.now }));
+  // 풀이나 보기 방식이 바뀌면 코드 칸의 줄과 변수를 비운다. 새 Player가 알려 줄 때까지 지난 풀이의 줄 번호가 남지 않게
   const clearReadout = () => {
     setLines(null);
     setVars({ now: NO_VARIABLES });
@@ -314,59 +272,52 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
             <ChevronRight size={16} className="details-chevron" aria-hidden="true" />
             문제 보기
           </summary>
-          <div className="panel problem-details-card">
-            <div
-              ref={detailsBodyRef}
-              className="problem-details-body"
-              style={customDetailsH !== undefined ? { height: customDetailsH, overflowY: 'auto' } : undefined}
-            >
-              <p className="problem-summary">{description.summary}</p>
-              <section className="panel-section">
-                <h2 className="section-title">제한 사항</h2>
-                <ul className="rule-list">
-                  {description.rules.map((rule) => (
-                    <li key={rule}>{rule}</li>
-                  ))}
-                </ul>
-              </section>
-              <section className="panel-section">
-                <h2 className="section-title">입출력 예</h2>
-                <table className="io-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">입력</th>
-                      <th scope="col">출력</th>
+          <div className="panel problem-details-body">
+            <p className="problem-summary">{description.summary}</p>
+            <section className="panel-section">
+              <h2 className="section-title">제한 사항</h2>
+              <ul className="rule-list">
+                {description.rules.map((rule) => (
+                  <li key={rule}>{rule}</li>
+                ))}
+              </ul>
+            </section>
+            <section className="panel-section">
+              <h2 className="section-title">입출력 예</h2>
+              <table className="io-table">
+                <thead>
+                  <tr>
+                    <th scope="col">입력</th>
+                    <th scope="col">출력</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {description.examples.map((example) => (
+                    <tr key={example.input}>
+                      <td>
+                        <code>{example.input}</code>
+                      </td>
+                      <td>
+                        <code className="io-output">{example.output}</code>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {description.examples.map((example) => (
-                      <tr key={example.input}>
-                        <td>
-                          <code>{example.input}</code>
-                        </td>
-                        <td>
-                          <code className="io-output">{example.output}</code>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-              <section className="panel-section">
-                <h2 className="section-title">핵심 발상</h2>
-                <ol className="insight-list">
-                  {problem.keyIntuitions.map((text, i) => (
-                    <li key={text} className="insight-item">
-                      <span className="insight-num" aria-hidden="true">
-                        {i + 1}
-                      </span>
-                      <p>{text}</p>
-                    </li>
                   ))}
-                </ol>
-              </section>
-            </div>
-            <ResizeHandle id="details" targetRef={detailsBodyRef} label="문제 보기" min={120} max={900} />
+                </tbody>
+              </table>
+            </section>
+            <section className="panel-section">
+              <h2 className="section-title">핵심 발상</h2>
+              <ol className="insight-list">
+                {problem.keyIntuitions.map((text, i) => (
+                  <li key={text} className="insight-item">
+                    <span className="insight-num" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <p>{text}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </div>
         </details>
 
@@ -388,6 +339,7 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
         {comparing ? (
           <RaceView problem={problem} vizs={vizs} />
         ) : (
+          // 탭을 바꾸면 새 Player가 시작 전(-1)부터 다시 시작한다
           <Player
             key={approach.id}
             viz={vizs[active]}
@@ -403,8 +355,7 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
         <CompareBars problem={problem} vizs={vizs} active={active} />
       </div>
 
-      <ColResizer kind="code" label="코드와 변수 칸" />
-
+      {/* 나란히 비교 중에는 고른 탭의 코드만 하이라이트 없이 보인다 */}
       <CodePanel
         code={approach.code}
         activeLines={comparing ? null : lines}

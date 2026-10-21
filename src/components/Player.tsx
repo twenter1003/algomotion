@@ -3,9 +3,7 @@ import type { Language, Visualization } from '../engine/model';
 import { initialPlayer, playerReducer } from '../engine/player';
 import type { Stage } from '../engine/stage';
 import { cycleLabels, planTicks } from '../engine/timeline';
-import { layoutStore, useLayoutSizes } from '../layoutStore';
 import { PlayerControls } from './PlayerControls';
-import { ResizeHandle } from './ResizeHandle';
 import { StageView } from './StageView';
 
 interface PlayerProps {
@@ -48,10 +46,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
   const [tickPause, setTickPause] = useState(false); // true면 1틱마다 자동으로 일시정지
   const stageRef = useRef<Stage | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const stageBoxRef = useRef<HTMLDivElement>(null);
   const [fitHeight, setFitHeight] = useState<number>();
-  const sizes = useLayoutSizes();
-  const customStageH = sizes.heights.stage;
   const cycle = useMemo(() => cycleLabels(viz), [viz]);
 
   // 연출을 시작할 때 읽는 값: 속도는 다음 틱부터 적용하고, 알림 함수는 늘 최신 것을 쓴다
@@ -139,7 +134,7 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     const observer = new ResizeObserver(measure);
     if (section.parentElement) observer.observe(section.parentElement);
     return () => observer.disconnect();
-  }, [sizes.freeScroll]);
+  }, []);
 
   // 단축키: Space(재생/일시정지), ←/→(이전/다음 틱), Shift+←/→(이전/다음 단계), R(처음으로)
   useEffect(() => {
@@ -167,8 +162,6 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const effectiveMaxHeight = customStageH !== undefined ? Math.max(120, customStageH - 36) : fitHeight;
-
   return (
     <section className="player panel" aria-label="풀이 재생" ref={sectionRef}>
       <div className="phase-bar">
@@ -191,53 +184,11 @@ export const Player: React.FC<PlayerProps> = ({ viz, demoLabel, workUnit, onFini
             {chip}
           </span>
         )}
-        <div className="stage-zoom" role="group" aria-label="무대 배율 조절">
-          <button
-            type="button"
-            className="zoom-btn"
-            onClick={() => layoutStore.setStageZoom(sizes.stageZoom - 0.15)}
-            disabled={sizes.stageZoom <= 0.5}
-            aria-label="무대 축소"
-            title="무대 축소"
-          >
-            −
-          </button>
-          <button
-            type="button"
-            className="zoom-reset-btn"
-            onClick={() => layoutStore.setStageZoom(1)}
-            aria-label="무대 배율 초기화"
-            title="클릭하면 100% 배율로 초기화합니다"
-          >
-            {Math.round(sizes.stageZoom * 100)}%
-          </button>
-          <button
-            type="button"
-            className="zoom-btn"
-            onClick={() => layoutStore.setStageZoom(sizes.stageZoom + 0.15)}
-            disabled={sizes.stageZoom >= 2}
-            aria-label="무대 확대"
-            title="무대 확대"
-          >
-            +
-          </button>
-        </div>
       </div>
 
-      <div
-        className="stage"
-        ref={stageBoxRef}
-        style={customStageH !== undefined ? { height: customStageH, minHeight: customStageH, overflow: 'auto' } : undefined}
-      >
-        <StageView
-          scene={viz.initial}
-          stageRef={stageRef}
-          maxScale={1.35}
-          maxHeight={effectiveMaxHeight}
-          zoom={sizes.stageZoom}
-        />
+      <div className="stage">
+        <StageView scene={viz.initial} stageRef={stageRef} maxScale={1.35} maxHeight={fitHeight} />
       </div>
-      <ResizeHandle id="stage" targetRef={stageBoxRef} label="시각화 무대" min={160} max={960} />
 
       <div className="readout">
         <div className="readout-meta">

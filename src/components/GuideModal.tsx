@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, LayoutGrid, ListOrdered, Maximize2, Scale, X } from 'lucide-react';
+import { Film, LayoutGrid, ListOrdered, Scale, X } from 'lucide-react';
 
 interface GuideModalProps {
   isOpen: boolean;
@@ -55,13 +55,6 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
             <div>
               <h3>나란히 비교</h3>
               <p>&lsquo;나란히 비교&rsquo;를 누르면 세 풀이가 같은 박자로 동시에 돌아갑니다. 일시정지하거나 한 틱씩 넘기며 어느 풀이가 더 많이 일하는지 비교할 수 있습니다.</p>
-            </div>
-          </li>
-          <li>
-            <Maximize2 size={20} aria-hidden="true" />
-            <div>
-              <h3>컴포넌트 크기 조절</h3>
-              <p>각 상자 아래쪽 손잡이를 위아래로 끌거나(−/+ 버튼), 칸 사이 세로 분할선을 좌우로 끌어 무대·코드·변수·목록 크기를 자유롭게 조절할 수 있습니다.</p>
             </div>
           </li>
           <li>

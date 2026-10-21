@@ -1,9 +1,7 @@
 import React from 'react';
-import { Check, Copy, Maximize2, Minimize2 } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import type { Language } from '../engine/model';
-import { layoutStore, useLayoutSizes } from '../layoutStore';
 import { highlight, LANGUAGES } from './highlight';
-import { ResizeHandle } from './ResizeHandle';
 
 type Variables = Record<string, string | number>;
 
@@ -21,12 +19,7 @@ const NO_LINES: number[] = [];
 
 export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variables, prevVariables, complexity, language, onLanguageChange }) => {
   const [copied, setCopied] = React.useState(false);
-  const [expanded, setExpanded] = React.useState(false); // 코드 상자 스크롤 없이 전체 펼치기
   const codeRef = React.useRef<HTMLPreElement>(null);
-  const varsRef = React.useRef<HTMLDivElement>(null);
-  const sizes = useLayoutSizes();
-  const customCodeH = sizes.heights.code;
-  const customVarsH = sizes.heights.vars;
   const lines = activeLines?.[language] ?? NO_LINES;
   const text = code[language];
   const entries = Object.entries(variables);
@@ -46,6 +39,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
     const top = first.offsetTop;
     const bottom = last.offsetTop + last.offsetHeight;
     if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) {
+      // 묶음 전체가 들어가면 가운데에, 안 들어가면 마지막 줄(실제 동작)이 보이게 둡니다.
       const target = bottom - top < box.clientHeight ? (top + bottom - box.clientHeight) / 2 : bottom - box.clientHeight + 8;
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       box.scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
@@ -62,21 +56,9 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
       .catch(() => {});
   };
 
-  const toggleExpand = () => {
-    if (customCodeH !== undefined) layoutStore.setHeight('code', undefined);
-    setExpanded((e) => !e);
-  };
-
-  const codeStyle: React.CSSProperties | undefined =
-    customCodeH !== undefined
-      ? { height: customCodeH, maxHeight: customCodeH, flex: 'none' }
-      : expanded
-        ? { maxHeight: 'none', height: 'auto', flex: 'none', overflowY: 'visible' }
-        : undefined;
-
   return (
     <aside className="code-panel" aria-label="코드와 변수">
-      <div className={customCodeH !== undefined || expanded ? 'panel code-card is-sized' : 'panel code-card'}>
+      <div className="panel code-card">
         <div className="code-toolbar">
           <div className="lang-tabs" role="group" aria-label="코드 언어">
             {LANGUAGES.map((lang) => (
@@ -91,25 +73,13 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
               </button>
             ))}
           </div>
-          <div className="code-toolbar-actions">
-            <button
-              type="button"
-              className="text-btn"
-              onClick={toggleExpand}
-              aria-pressed={expanded && customCodeH === undefined}
-              title={expanded ? '코드 상자 기본 높이로 줄이기' : '코드 전체를 스크롤 없이 펼치기'}
-            >
-              {expanded && customCodeH === undefined ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
-              <span>{expanded && customCodeH === undefined ? '접기' : '전체 펼치기'}</span>
-            </button>
-            <button type="button" className="text-btn" onClick={copyCode}>
-              {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
-              <span>{copied ? '복사했습니다' : '코드 복사'}</span>
-            </button>
-          </div>
+          <button type="button" className="text-btn" onClick={copyCode}>
+            {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+            <span>{copied ? '복사했습니다' : '코드 복사'}</span>
+          </button>
         </div>
 
-        <pre className="code-view" ref={codeRef} style={codeStyle}>
+        <pre className="code-view" ref={codeRef}>
           <code>
             {text.split('\n').map((line, idx) => {
               const lineNo = idx + 1;
@@ -124,36 +94,29 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
             })}
           </code>
         </pre>
-        <ResizeHandle id="code" targetRef={codeRef} label="코드 상자" min={140} max={1200} />
       </div>
 
-      <section className="panel vars-card-wrap" aria-label="변수">
-        <div
-          ref={varsRef}
-          className="vars-card"
-          style={customVarsH !== undefined ? { height: customVarsH, overflowY: 'auto' } : undefined}
-        >
-          <h2 className="section-title">변수</h2>
-          {entries.length ? (
-            <dl className="var-list">
-              {entries.map(([name, value]) => {
-                const changed = prevVariables !== undefined && name in prevVariables && String(prevVariables[name]) !== String(value);
-                return (
-                  <div key={name} className={`var-row${changed ? ' is-changed' : ''}`}>
-                    <dt>{name}</dt>
-                    <dd>
-                      <span className="var-value">{String(value)}</span>
-                      {changed && <span className="var-flag">바뀜</span>}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          ) : (
-            <p className="vars-empty">재생 화면에서 틱이나 단계를 진행하면 변수 값이 보입니다.</p>
-          )}
-        </div>
-        <ResizeHandle id="vars" targetRef={varsRef} label="변수 상자" min={80} max={600} />
+      <section className="panel vars-card" aria-label="변수">
+        <h2 className="section-title">변수</h2>
+        {entries.length ? (
+          <dl className="var-list">
+            {entries.map(([name, value]) => {
+              // 앞서 보이지 않던 변수는 '바뀜'이 아니다(시작 전이나 다른 풀이에서 넘어온 첫 단계)
+              const changed = prevVariables !== undefined && name in prevVariables && String(prevVariables[name]) !== String(value);
+              return (
+                <div key={name} className={`var-row${changed ? ' is-changed' : ''}`}>
+                  <dt>{name}</dt>
+                  <dd>
+                    <span className="var-value">{String(value)}</span>
+                    {changed && <span className="var-flag">바뀜</span>}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        ) : (
+          <p className="vars-empty">재생 화면에서 단계를 진행하면 변수 값이 보입니다.</p>
+        )}
       </section>
 
       <section className="panel complexity-card" aria-label="복잡도">
