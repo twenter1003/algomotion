@@ -452,7 +452,7 @@ function recursion(): Visualization {
 
   rec.step({ title: '재귀 함수 paths(x, y) 정의', codeHighlights: REC_AT.start, ...meta() });
   rec.phase('시작', 'paths(x, y)는 집에서 (x, y)까지 오는 길의 수입니다.');
-  rec.do(calcTo('paths(x, y) = paths(x-1, y) + paths(x, y-1)'));
+  rec.do(calcTo('paths(x, y) = 왼쪽 + 위'));
   rec.phase('횟수 세기', '메모가 없으니 칸마다 부른 횟수와, 찾은 길 수를 셉니다.');
   rec.do({ type: 'add', item: WAYS });
 

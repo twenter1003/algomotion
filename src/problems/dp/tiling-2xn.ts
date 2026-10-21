@@ -243,7 +243,7 @@ function table(): Visualization {
     rec.do(...draw(i, i === 3));
     rec.phase('값 보기', `세로로 끝나면 남은 가로 ${josa(i - 1, '을', '를')} ${one}가지, 가로로 끝나면 남은 가로 ${josa(i - 2, '을', '를')} ${two}가지로 채웁니다.`, TABLE_AT.look);
     rec.do(...together([{ type: 'focus', ids: [cellId(i), cellId(i - 1), cellId(i - 2), 'A:tile', 'B:tile1', 'B:tile2'] }, calcTo(formula)]));
-    rec.do(look(cellId(i), cellId(i - 1), `${one}가지`), look(cellId(i), cellId(i - 2), `${two}가지`), wait(300));
+    rec.do(look(cellId(i), cellId(i - 1), `${one}가지`), look(cellId(i), `label:${i - 2}`, `${two}가지`), wait(300));
     rec.phase('더하기', `두 경우는 겹치지 않아 ${one} + ${two} = ${WAYS[i]}가지입니다.`, TABLE_AT.add);
     rec.do(...together([fill(i), calcTo(`${formula} = ${WAYS[i]}`)]), wait(300), ...clear());
     lit = i;
@@ -286,8 +286,8 @@ function roll(): Visualization {
     [now.a, now.b] = [b, WAYS[i]];
     rec.step({ title: `새 값 ${a} + ${b} = ${WAYS[i]}, 한 칸 밀기`, codeHighlights: ROLL_AT.add, ...meta() });
     rec.phase('두 값 보기', `가로 ${josa(i, '은', '는')} 가로 ${i - 1}의 b = ${b}가지와 가로 ${i - 2}의 a = ${a}가지가 모입니다.`, ROLL_AT.look);
-    rec.do(...together([paint(i, 'current'), { type: 'focus', ids: [cellId(i), cellId(i - 1), cellId(i - 2)] }, calcTo(`a + b = ${a} + ${b}`)]));
-    rec.do(look(cellId(i), cellId(i - 1), `b=${b}`), look(cellId(i), cellId(i - 2), `a=${a}`), wait(300));
+    rec.do(...together([paint(i, 'current'), { type: 'focus', ids: [cellId(i), cellId(i - 1), cellId(i - 2), 'a', 'b'] }, calcTo(`a + b = ${a} + ${b}`)]));
+    rec.do(look(cellId(i), 'b', `b=${b}`), look(cellId(i), 'a', `a=${a}`), wait(300));
     rec.phase('더하기', `${a} + ${b} = ${WAYS[i]}가지를 가로 ${i}에 적습니다.`, ROLL_AT.add);
     rec.do(...together([setCell(i, { text: String(WAYS[i]) }, true), calcTo(`${a} + ${b} = ${WAYS[i]}`)]), wait(300), ...clear());
     rec.phase('밀기', `a는 ${ro(b)}, b는 ${ro(WAYS[i])} 바꾸고 가로 ${i - 2}의 값은 더 쓰지 않아 지웁니다.`, ROLL_AT.add);

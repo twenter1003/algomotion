@@ -523,7 +523,7 @@ function build(s: Script): Visualization {
       st.row = shown[k] ?? [];
       rec.step({ title: `${josa(dp(i), '과', '와')} ${dp(k - i)}의 짝은 건너뜀`, codeHighlights: s.at.skip!, ...meta() });
       rec.phase('짝 건너뛰기', `i는 k // 2 = ${Math.floor(k / 2)}까지만 돌아서 ${josa(dp(i), '과', '와')} ${dp(k - i)}의 짝은 계산하지 않습니다.`, s.at.skip);
-      rec.do(...together([...settle(), focusIds([...ids(i), ...ids(k - i)]), calcTo(`i = ${i}는 k // 2 = ${Math.floor(k / 2)}를 넘어 건너뜀`)]));
+      rec.do(...together([...settle(), focusIds([...ids(i), ...ids(k - i)]), calcTo(`i = ${josa(i, '은', '는')} k // 2 = ${josa(Math.floor(k / 2), '을', '를')} 넘어 건너뜀`)]));
       rec.do({ type: 'arrow', from: cellId(i, shown[i][0]), to: cellId(k - i, shown[k - i][0]), verdict: 'bad', label: '짝 건너뜀' }, wait(300), ...clear());
       check();
     }

@@ -278,9 +278,20 @@ function top2(): Visualization {
   const rec = new StepRecorder(board(CALC, HEIGHT));
   const dp = LAND.map((row) => [...row]);
   let now: { cell: Cell; orig: number; add: number; total: number } | undefined;
+  let curI: number | string = '-';
+  let firstCol: number | string = '-';
+  let secondCol: number | string = '-';
   let lit: Cell | undefined;
   let done = COLS;
-  const meta = () => ({ work: done, variables: cellVars(now) });
+  const meta = () => ({
+    work: done,
+    variables: {
+      ...cellVars(now),
+      i: now ? now.cell[0] : curI,
+      first: firstCol,
+      second: secondCol,
+    },
+  });
   const settle = (): Action[] => (lit ? [paint(lit, 'visited')] : []);
   let ranked: Cell[] = []; // 1등·2등 표시가 붙은 칸들(줄이 끝나면 지운다)
   const unrank = (): Action[] => ranked.map((c) => set(c, { tag: '', tone: 'visited' }));
@@ -300,6 +311,10 @@ function top2(): Visualization {
     const [c1, c2]: Cell[] = [[i - 1, first], [i - 1, second]];
     const settlingRank = settle();
     lit = undefined;
+    now = undefined;
+    curI = i;
+    firstCol = first;
+    secondCol = second;
 
     rec.step({ title: `${i - 1}행의 1등 ${prev[first]}, 2등 ${prev[second]}`, codeHighlights: TOP2_AT.rank, ...meta() });
     rec.phase('1·2등 찾기', `${i - 1}행(${prev.join(', ')})에서 가장 큰 두 칸을 찾습니다.`, TOP2_AT.rank);
