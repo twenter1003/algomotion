@@ -776,11 +776,16 @@ a:hover {
   .problem-page {
     flex: 1 1 auto;
     min-height: 0;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: 'main code';
+    grid-template-areas: 'main';
     gap: 16px;
     padding: 12px 24px;
+  }
+
+  .problem-page.has-code {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-areas: 'main code';
   }
 
   /* 칸 가장자리에서 초점 테두리(2px + 간격 2px)가 잘리지 않게 안쪽 여백 4px */
@@ -846,6 +851,11 @@ a:hover {
 /* 1280px 이상: 왼쪽에 옆 메뉴 칸이 더해진다(접으면 has-sidebar가 빠진다) */
 @media (min-width: 1280px) {
   .problem-page.has-sidebar {
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas: 'side main';
+  }
+
+  .problem-page.has-sidebar.has-code {
     grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 380px);
     grid-template-areas: 'side main code';
   }
@@ -1161,6 +1171,13 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.race-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .race-input {

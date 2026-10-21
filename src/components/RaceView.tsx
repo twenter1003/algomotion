@@ -10,7 +10,7 @@ const BASE_BEAT = 860; // 1× 기준 1틱당 860ms (여유 있게 비교할 수 
 const SPEEDS = [0.5, 0.75, 1, 1.5, 2];
 
 // 세 판을 나란히 두려면 가장 넓은 장면도 이 배율 이상으로 그려져야 한다. 아니면 위아래로 쌓는다
-const MIN_SIDE_SCALE = 0.5;
+const MIN_SIDE_SCALE = 0.35;
 const BOARD_GAP = 12;
 const BOARD_FRAME = 22;
 
@@ -59,7 +59,12 @@ const RaceBoard: React.FC<RaceBoardProps> = ({ approach, viz, ticks, tick, workU
 };
 
 // 나란히 비교: 세 풀이를 세분화된 틱 박자로 동시에 돌린다. 일시정지, 한 틱 이동, 속도 조절 지원
-export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = ({ problem, vizs }) => {
+export const RaceView: React.FC<{
+  problem: Problem;
+  vizs: Visualization[];
+  codeShown?: boolean;
+  onToggleCode?: () => void;
+}> = ({ problem, vizs, codeShown, onToggleCode }) => {
   const allTicks = useMemo(() => vizs.map((v) => planTicks(v)), [vizs]);
   const end = Math.max(...allTicks.map((t) => t.length)) - 1;
   const [tick, setTick] = useState(0);
@@ -92,16 +97,28 @@ export const RaceView: React.FC<{ problem: Problem; vizs: Visualization[] }> = (
     <section className="panel race" aria-label="나란히 비교">
       <div className="race-bar">
         <span className="race-input">{problem.demo.label}</span>
-        <button
-          type="button"
-          className="btn-outline head-btn"
-          onClick={() => {
-            setTick(-1);
-            setPlaying(true);
-          }}
-        >
-          <span aria-hidden="true">↺</span> 다시 경주
-        </button>
+        <div className="race-bar-actions">
+          {onToggleCode && (
+            <button
+              type="button"
+              className="btn-outline head-btn list-toggle"
+              aria-expanded={codeShown}
+              onClick={onToggleCode}
+            >
+              <span aria-hidden="true">&lt;/&gt;</span> {codeShown ? '코드 접기' : '코드 펼치기'}
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn-outline head-btn"
+            onClick={() => {
+              setTick(-1);
+              setPlaying(true);
+            }}
+          >
+            <span aria-hidden="true">↺</span> 다시 경주
+          </button>
+        </div>
       </div>
 
       <div ref={boardsRef} className={stacked ? 'race-boards is-stacked' : 'race-boards'}>

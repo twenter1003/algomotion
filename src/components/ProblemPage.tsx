@@ -124,6 +124,8 @@ const PagerButton: React.FC<{ to?: ProblemMeta; label: string }> = ({ to, label 
 export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = ({ id, tools }) => {
   const wide = useSyncExternalStore(watchWide, isWide);
   const [collapsed, setCollapsed] = useState(false); // 넓은 화면에서 옆 메뉴를 접었는지
+  const [codeCollapsed, setCodeCollapsed] = useState(false); // 오른쪽 코드 칸을 접었는지
+  const beforeCompareRef = useRef({ collapsed: false, codeCollapsed: false });
   const [drawerOpen, setDrawerOpen] = useState(false);
   if (wide && drawerOpen) setDrawerOpen(false); // 넓어지면 서랍은 닫힌 것으로 둔다(다시 좁아져도 저절로 열리지 않게)
   const [seen, setSeen] = useState(() => progress.seen());
@@ -136,6 +138,7 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
   // 옆 메뉴가 접힌 채 한 번 그려지지 않고, 그 안의 scrollIntoView가 같은 그림에서 지금 문제를 찾는다
   if (shownId !== id) {
     setShownId(id);
+    setCodeCollapsed(false);
     if (found) setChoice((m) => new Map([...m].filter(([categoryId]) => categoryId !== found.category.id)));
   }
 
@@ -144,6 +147,19 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
   if (!meta.load) return <Notice text="아직 준비 중인 문제입니다." />;
 
   const listShown = wide ? !collapsed : drawerOpen;
+  const codeShown = !codeCollapsed;
+  const handleCompareChange = (nextComparing: boolean) => {
+    if (nextComparing) {
+      beforeCompareRef.current = { collapsed, codeCollapsed };
+      setCollapsed(true);
+      setCodeCollapsed(true);
+      setDrawerOpen(false);
+    } else {
+      setCollapsed(beforeCompareRef.current.collapsed);
+      setCodeCollapsed(beforeCompareRef.current.codeCollapsed);
+    }
+  };
+
   const sidebar = (
     <Sidebar
       currentId={id}
@@ -156,8 +172,16 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
     />
   );
 
+  const pageClass = [
+    'problem-page',
+    wide && !collapsed ? 'has-sidebar' : '',
+    codeShown ? 'has-code' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <main className={`problem-page${wide && !collapsed ? ' has-sidebar' : ''}`}>
+    <main className={pageClass}>
       {tools &&
         createPortal(
           <div className="crumbs-row">
@@ -173,6 +197,14 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
               {TIER_NAMES[category.tier]} › {category.name} › {index + 1}/{category.problems.length}
             </p>
             <div className="pager">
+              <button
+                type="button"
+                className="btn-outline head-btn list-toggle"
+                aria-expanded={codeShown}
+                onClick={() => setCodeCollapsed((c) => !c)}
+              >
+                <span aria-hidden="true">&lt;/&gt;</span> 코드 칸
+              </button>
               <PagerButton to={category.problems[index - 1]} label="← 이전 문제" />
               <PagerButton to={category.problems[index + 1]} label="다음 문제 →" />
             </div>
@@ -189,7 +221,14 @@ export const ProblemPage: React.FC<{ id: string; tools: HTMLElement | null }> = 
       )}
 
       <BodyBoundary key={id} meta={meta}>
-        <ProblemBody meta={meta} load={meta.load} onSeen={() => setSeen(progress.seen())} />
+        <ProblemBody
+          meta={meta}
+          load={meta.load}
+          codeShown={codeShown}
+          onToggleCode={() => setCodeCollapsed((c) => !c)}
+          onCompareChange={handleCompareChange}
+          onSeen={() => setSeen(progress.seen())}
+        />
       </BodyBoundary>
     </main>
   );
@@ -208,7 +247,14 @@ const ProblemHead: React.FC<{ meta: ProblemMeta }> = ({ meta }) => (
 );
 
 // 문제 본문(가운데 칸과 코드 칸). 문제를 불러오고, 정석 풀이를 끝까지 보면 '봤음'으로 적는다
-const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; onSeen: () => void }> = ({ meta, load, onSeen }) => {
+const ProblemBody: React.FC<{
+  meta: ProblemMeta;
+  load: () => Promise<Problem>;
+  codeShown: boolean;
+  onToggleCode: () => void;
+  onCompareChange: (comparing: boolean) => void;
+  onSeen: () => void;
+}> = ({ meta, load, codeShown, onToggleCode, onCompareChange, onSeen }) => {
   const { id } = meta;
   const [problem, setProblem] = useState<Problem>();
   const [failed, setFailed] = useState(false);
@@ -331,13 +377,15 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
           }}
           comparing={comparing}
           onToggleCompare={() => {
-            setComparing((on) => !on);
+            const next = !comparing;
+            setComparing(next);
+            onCompareChange(next);
             clearReadout();
           }}
         />
 
         {comparing ? (
-          <RaceView problem={problem} vizs={vizs} />
+          <RaceView problem={problem} vizs={vizs} codeShown={codeShown} onToggleCode={onToggleCode} />
         ) : (
           // 탭을 바꾸면 새 Player가 시작 전(-1)부터 다시 시작한다
           <Player
@@ -355,16 +403,18 @@ const ProblemBody: React.FC<{ meta: ProblemMeta; load: () => Promise<Problem>; o
         <CompareBars problem={problem} vizs={vizs} active={active} />
       </div>
 
-      {/* 나란히 비교 중에는 고른 탭의 코드만 하이라이트 없이 보인다 */}
-      <CodePanel
-        code={approach.code}
-        activeLines={comparing ? null : lines}
-        variables={comparing ? NO_VARIABLES : vars.now}
-        prevVariables={comparing ? undefined : vars.prev}
-        complexity={{ time: approach.timeComplexity, space: approach.spaceComplexity }}
-        language={language}
-        onLanguageChange={setLanguage}
-      />
+      {/* 나란히 비교 중에는 기본적으로 접히며, 펼치면 고른 탭의 코드가 하이라이트 없이 보인다 */}
+      {codeShown && (
+        <CodePanel
+          code={approach.code}
+          activeLines={comparing ? null : lines}
+          variables={comparing ? NO_VARIABLES : vars.now}
+          prevVariables={comparing ? undefined : vars.prev}
+          complexity={{ time: approach.timeComplexity, space: approach.spaceComplexity }}
+          language={language}
+          onLanguageChange={setLanguage}
+        />
+      )}
     </>
   );
 };
