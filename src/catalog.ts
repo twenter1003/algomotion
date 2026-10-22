@@ -3,12 +3,17 @@ import { LOADERS } from './problems/registry.ts';
 
 // 빈도 단계, 유형, 문제 목록. 홈과 옆 메뉴는 이 가벼운 정보만으로 그리고, 문제 본문은 열 때 load로 불러온다.
 // 유형 이름과 핵심 발상은 catalog.html 시안, 문제(제목, 레벨, 문제 번호, 정석 풀이)는 설계서 4.4 표를 따른다.
-export const TIER_NAMES: Record<1 | 2 | 3, string> = { 1: '아주 자주 나와요', 2: '자주 나와요', 3: '가끔 나와요' };
+export const TIER_NAMES: Record<1 | 2 | 3 | 4, string> = {
+  1: '아주 자주 나와요',
+  2: '자주 나와요',
+  3: '가끔 나와요',
+  4: 'SQL 고득점 Kit',
+};
 
 type Row = [id: string, title: string, level: 2 | 3, lesson: number, bestName: string];
 
 // load가 없으면 준비 중인 문제다
-const category = (id: CategoryId, name: string, tier: 1 | 2 | 3, idea: string, rows: Row[]): Category => ({
+const category = (id: CategoryId, name: string, tier: 1 | 2 | 3 | 4, idea: string, rows: Row[]): Category => ({
   id, name, tier, idea,
   problems: rows.map(([pid, title, level, lesson, bestName]) => ({
     id: pid, title, level, bestName,
@@ -115,6 +120,30 @@ export const CATEGORIES: Category[] = [
     ['gem-shopping', '보석 쇼핑', 3, 67258, '모든 종류를 담는 최소 구간'],
     ['equal-queues', '두 큐 합 같게 만들기', 2, 118667, '큰 쪽에서 옮기기'],
     ['number-expression', '숫자의 표현', 2, 12924, '연속 합 구간'],
+  ]),
+  category('sql-select', 'SQL · SELECT', 4, '조건(WHERE)에 맞는 행을 고르고 원하는 기준(ORDER BY)으로 정렬해 출력합니다.', [
+    ['march-female-members', '3월에 태어난 여성 회원 목록 출력하기', 2, 131120, 'WHERE 3월·여성·IS NOT NULL'],
+    ['repurchase-members', '재구매가 일어난 상품과 회원 리스트 구하기', 2, 131536, 'GROUP BY 두 열 + HAVING'],
+  ]),
+  category('sql-aggregate', 'SQL · SUM, MAX, MIN', 4, '최댓값·최솟값·합계를 구하고, 집계값과 원본 행을 서브쿼리로 연결합니다.', [
+    ['most-expensive-food', '가격이 제일 비싼 식품의 정보 출력하기', 2, 131115, 'ORDER BY DESC + LIMIT 1'],
+    ['biggest-fish-per-type', '물고기 종류 별 대어 찾기', 3, 293261, '종류별 MAX 서브쿼리 + JOIN'],
+  ]),
+  category('sql-group-by', 'SQL · GROUP BY', 4, '기준 열로 행을 묶어 집계하고, 묶기 전 조건(WHERE)과 묶은 뒤 조건(HAVING)을 구분합니다.', [
+    ['same-name-animal-count', '동명 동물 수 찾기', 2, 59041, 'WHERE IS NOT NULL + HAVING'],
+    ['most-expensive-food-by-category', '식품분류별 가장 비싼 식품의 정보 조회하기', 3, 131116, '(분류, 가격) IN 서브쿼리'],
+  ]),
+  category('sql-is-null', 'SQL · IS NULL', 4, '비어 있는 값(NULL)을 기본값으로 바꾸거나(COALESCE), NULL 여부를 조건으로 판별합니다.', [
+    ['null-handling', 'NULL 처리하기', 2, 59410, 'COALESCE / IFNULL'],
+    ['unupgradable-items', '업그레이드 할 수 없는 아이템 구하기', 3, 273712, 'LEFT JOIN 부모키 + IS NULL'],
+  ]),
+  category('sql-join', 'SQL · JOIN', 4, '두 테이블을 외래키로 연결해 한쪽에만 있는 행(LEFT JOIN)이나 양쪽 모두 있는 행(INNER JOIN)을 찾습니다.', [
+    ['missing-records', '없어진 기록 찾기', 3, 59042, 'LEFT JOIN + IS NULL'],
+    ['may-food-total-sales', '5월 식품들의 총매출 조회하기', 3, 131117, '5월 필터 + JOIN + GROUP BY'],
+  ]),
+  category('sql-string-date', 'SQL · String, Date', 4, '문자열 패턴(LIKE·LOWER)과 날짜 차이(DATEDIFF)를 계산해 원하는 행을 추립니다.', [
+    ['find-el-in-dog', '이름에 el이 들어가는 강아지 찾기', 2, 59047, 'WHERE Dog + LOWER LIKE'],
+    ['long-term-protected-animals-2', '오랜 기간 보호한 동물(2)', 3, 59411, 'JOIN + DATEDIFF 내림차순 LIMIT 2'],
   ]),
 ];
 

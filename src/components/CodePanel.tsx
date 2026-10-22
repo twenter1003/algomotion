@@ -1,18 +1,18 @@
 import React from 'react';
 import { Check, Copy } from 'lucide-react';
-import type { Language } from '../engine/model';
-import { highlight, LANGUAGES } from './highlight';
+import type { CodeHighlights, CodeLanguage, CodeMap } from '../engine/model';
+import { CODE_LANGUAGES, highlight } from './highlight';
 
 type Variables = Record<string, string | number>;
 
 interface CodePanelProps {
-  code: Record<Language, string>;
-  activeLines: Record<Language, number[]> | null; // null이면 하이라이트 없음
+  code: CodeMap;
+  activeLines: CodeHighlights | null; // null이면 하이라이트 없음
   variables: Variables;
   prevVariables?: Variables; // 앞서 보인 값. 값이 달라진 변수에 '바뀜'을 단다
   complexity: { time: string; space: string };
-  language: Language;
-  onLanguageChange: (l: Language) => void;
+  language: CodeLanguage;
+  onLanguageChange: (l: CodeLanguage) => void;
 }
 
 const NO_LINES: number[] = [];
@@ -20,8 +20,10 @@ const NO_LINES: number[] = [];
 export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variables, prevVariables, complexity, language, onLanguageChange }) => {
   const [copied, setCopied] = React.useState(false);
   const codeRef = React.useRef<HTMLPreElement>(null);
-  const lines = activeLines?.[language] ?? NO_LINES;
-  const text = code[language];
+  const availableLanguages = CODE_LANGUAGES.filter((l) => code[l.id] !== undefined);
+  const effectiveLang: CodeLanguage = code[language] !== undefined ? language : 'python';
+  const lines = activeLines?.[effectiveLang] ?? NO_LINES;
+  const text = code[effectiveLang] ?? '';
   const entries = Object.entries(variables);
 
   // 다른 풀이나 언어의 코드로 바뀌면 맨 위부터 보입니다.
@@ -61,12 +63,12 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
       <div className="panel code-card">
         <div className="code-toolbar">
           <div className="lang-tabs" role="group" aria-label="코드 언어">
-            {LANGUAGES.map((lang) => (
+            {availableLanguages.map((lang) => (
               <button
                 key={lang.id}
                 type="button"
                 className="lang-tab"
-                aria-pressed={language === lang.id}
+                aria-pressed={effectiveLang === lang.id}
                 onClick={() => onLanguageChange(lang.id)}
               >
                 {lang.label}
@@ -88,7 +90,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({ code, activeLines, variabl
                   <span className="line-no" aria-hidden="true">
                     {lineNo}
                   </span>
-                  <span className="line-text">{highlight(line, language)}</span>
+                  <span className="line-text">{highlight(line, effectiveLang)}</span>
                 </span>
               );
             })}

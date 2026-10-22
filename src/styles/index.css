@@ -1681,12 +1681,16 @@ kbd {
   background: linear-gradient(transparent 55%, var(--hl-green) 55%);
 }
 
+.tier[data-tier='4'] .tier-title span {
+  background: linear-gradient(transparent 55%, var(--hl-pink) 55%);
+}
+
 .tier-note {
   color: var(--ink-3);
   font-size: 13px;
 }
 
-/* 열 수는 카드 수로 나누어떨어지는 것만: 4장은 1·2·4열, 3장은 1·3열, 2장은 1·2열 */
+/* 열 수는 카드 수로 나누어떨어지는 것만: 6장은 1·2·3열, 4장은 1·2·4열, 3장은 1·3열, 2장은 1·2열 */
 .cat-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1696,13 +1700,15 @@ kbd {
 
 @media (min-width: 600px) {
   .cat-grid[data-count='2'],
-  .cat-grid[data-count='4'] {
+  .cat-grid[data-count='4'],
+  .cat-grid[data-count='6'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 900px) {
-  .cat-grid[data-count='3'] {
+  .cat-grid[data-count='3'],
+  .cat-grid[data-count='6'] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

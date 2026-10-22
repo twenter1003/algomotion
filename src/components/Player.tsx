@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
-import type { Language, Visualization } from '../engine/model';
+import type { CodeHighlights, Visualization } from '../engine/model';
 import { initialPlayer, playerReducer } from '../engine/player';
 import type { Stage } from '../engine/stage';
 import { cycleLabels, planTicks } from '../engine/timeline';
@@ -11,7 +11,7 @@ interface PlayerProps {
   demoLabel: string;
   workUnit: string;
   onFinish?: () => void;
-  onLinesChange?: (lines: Record<Language, number[]> | null) => void;
+  onLinesChange?: (lines: CodeHighlights | null) => void;
   onVariablesChange?: (variables: Record<string, string | number>) => void;
 }
 

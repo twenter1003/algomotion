@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { ChevronRight, ExternalLink, X } from 'lucide-react';
 import { findProblem, TIER_NAMES } from '../catalog';
-import type { CategoryId, Language, Problem, ProblemMeta } from '../engine/model';
+import type { CategoryId, CodeHighlights, CodeLanguage, Problem, ProblemMeta } from '../engine/model';
 import { progress } from '../progress';
 import { problemHref } from '../route';
 import { ApproachNotes } from './ApproachNotes';
@@ -260,8 +260,8 @@ const ProblemBody: React.FC<{
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0); // 고른 풀이 번호
   const [comparing, setComparing] = useState(false);
-  const [language, setLanguage] = useState<Language>('python');
-  const [lines, setLines] = useState<Record<Language, number[]> | null>(null);
+  const [language, setLanguage] = useState<CodeLanguage>('python');
+  const [lines, setLines] = useState<CodeHighlights | null>(null);
   const [vars, setVars] = useState<{ now: Variables; prev?: Variables }>({ now: NO_VARIABLES });
 
   useEffect(() => {
@@ -270,6 +270,7 @@ const ProblemBody: React.FC<{
       (p) => {
         if (!alive) return;
         setProblem(p);
+        setLanguage(p.approaches[0].code.sql !== undefined ? 'sql' : 'python');
         progress.setLast(id);
       },
       () => {

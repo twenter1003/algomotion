@@ -1,4 +1,4 @@
-import type { Action, AlgorithmStep, Item, Language, Phase, Scene, Visualization } from './model.ts';
+import type { Action, AlgorithmStep, CodeHighlights, Item, Phase, Scene, Visualization } from './model.ts';
 
 // 동작을 장면에 적용하면서 단계와 마디를 기록한다.
 // 받은 값과 찍어 둔 장면은 모두 깊은 복사본이라, 기록한 뒤에 바깥에서 고쳐도 기록이 바뀌지 않는다.
@@ -27,7 +27,7 @@ export class StepRecorder {
     this.open = { ...structuredClone(meta), phases: [] };
   }
 
-  phase(label: string, caption: string, codeHighlights?: Record<Language, number[]>): void {
+  phase(label: string, caption: string, codeHighlights?: CodeHighlights): void {
     if (!this.open) throw new Error(`단계를 열기 전에는 마디를 열 수 없습니다: ${label}`);
     const phase: Phase = { label, caption, actions: [] };
     this.open.phases.push(codeHighlights ? { ...phase, codeHighlights: structuredClone(codeHighlights) } : phase);

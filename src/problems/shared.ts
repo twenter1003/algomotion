@@ -1,4 +1,4 @@
-import type { Action, Language, Point } from '../engine/model.ts';
+import type { Action, CodeHighlights, Language, Point } from '../engine/model.ts';
 
 /** 코드에서 needle이 들어 있는 첫 줄의 번호(1부터)를 찾습니다. 코드를 고쳐도 하이라이트가 어긋나지 않습니다. */
 export const at = (code: string, ...needles: string[]): number[] => {
@@ -13,6 +13,18 @@ export const at = (code: string, ...needles: string[]): number[] => {
 // 풀이 코드에서 조각이 든 줄 번호: Python 조각들, JavaScript 조각들
 export const lines = (code: Record<Language, string>, python: string[], javascript: string[]): Record<Language, number[]> =>
   ({ python: at(code.python, ...python), javascript: at(code.javascript, ...javascript) });
+
+// SQL 문제용: SQL·Python·JavaScript 세 언어 코드에서 조각이 든 줄 번호
+export const sqlLines = (
+  code: { sql: string; python: string; javascript: string },
+  sql: string[],
+  python: string[],
+  javascript: string[],
+): CodeHighlights => ({
+  sql: at(code.sql, ...sql),
+  python: at(code.python, ...python),
+  javascript: at(code.javascript, ...javascript),
+});
 
 // 한 묶음: 첫 동작은 앞 동작이 끝난 뒤, 나머지는 첫 동작과 같이 시작한다. join이면 첫 동작도 앞 동작과 같이 시작한다.
 export const together = (actions: Action[], join = false): Action[] =>

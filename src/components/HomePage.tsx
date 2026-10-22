@@ -6,7 +6,7 @@ import { progress } from '../progress';
 import { problemHref } from '../route';
 import { GuideModal } from './GuideModal';
 
-const TIERS = [1, 2, 3] as const;
+const TIERS = [1, 2, 3, 4] as const;
 const FOLD = 5; // 카드에 처음 보이는 문제 수. 넘으면 '더 보기'로 펼친다
 
 // 문제 줄: 레벨, 제목, 정석 풀이 이름, 봤으면 ✓. 준비 중이면 흐리게 두고 누를 수 없다

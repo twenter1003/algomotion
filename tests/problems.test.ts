@@ -44,18 +44,20 @@ for (const [id, loader] of Object.entries(LOADERS)) {
     test('단계마다 마디가 있고 자막이 있고 하이라이트 줄이 코드 안에 있음', () => {
       problem.approaches.forEach((a, i) => vizs[i].steps.forEach((s) => {
         assert.ok(s.phases.length > 0 && s.phases.every((p) => p.caption.trim()), `${a.id} ${s.title}`);
-        for (const lang of ['python', 'javascript'] as const) {
-          const lines = a.code[lang].split('\n').length;
+        const langs = a.code.sql !== undefined ? (['sql', 'python', 'javascript'] as const) : (['python', 'javascript'] as const);
+        for (const lang of langs) {
+          const lines = a.code[lang]!.split('\n').length;
           for (const h of [s.codeHighlights, ...s.phases.map((p) => p.codeHighlights).filter(Boolean)])
-            for (const n of h![lang]) assert.ok(n >= 1 && n <= lines, `${a.id} ${s.title} ${lang} ${n}`);
+            for (const n of h![lang] ?? []) assert.ok(n >= 1 && n <= lines, `${a.id} ${s.title} ${lang} ${n}`);
         }
       }));
     });
     test('하이라이트가 비어 있지 않음', () => {
       problem.approaches.forEach((a, i) => vizs[i].steps.forEach((s) => {
-        for (const lang of ['python', 'javascript'] as const)
+        const langs = a.code.sql !== undefined ? (['sql', 'python', 'javascript'] as const) : (['python', 'javascript'] as const);
+        for (const lang of langs)
           for (const h of [s.codeHighlights, ...s.phases.map((p) => p.codeHighlights).filter(Boolean)])
-            assert.ok(h![lang].length > 0, `${a.id} ${s.title} ${lang}`);
+            assert.ok((h![lang] ?? []).length > 0, `${a.id} ${s.title} ${lang}`);
       }));
     });
     test('물체가 장면 안에 있음', () => {

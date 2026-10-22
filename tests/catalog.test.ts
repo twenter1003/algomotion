@@ -3,12 +3,12 @@ import { test } from 'node:test';
 import { CATEGORIES, findProblem, searchCatalog } from '../src/catalog.ts';
 import { LOADERS } from '../src/problems/registry.ts';
 
-test('유형 11개, 단계별 문제 수 10/6/4, 모두 76문제, id 중복 없음', () => {
-  assert.equal(CATEGORIES.length, 11);
-  for (const c of CATEGORIES) assert.equal(c.problems.length, { 1: 10, 2: 6, 3: 4 }[c.tier], c.id);
+test('유형 17개, 단계별 문제 수 10/6/4/2, 모두 88문제, id 중복 없음', () => {
+  assert.equal(CATEGORIES.length, 17);
+  for (const c of CATEGORIES) assert.equal(c.problems.length, { 1: 10, 2: 6, 3: 4, 4: 2 }[c.tier], c.id);
   const ids = CATEGORIES.flatMap((c) => c.problems.map((p) => p.id));
-  assert.equal(ids.length, 76);
-  assert.equal(new Set(ids).size, 76);
+  assert.equal(ids.length, 88);
+  assert.equal(new Set(ids).size, 88);
 });
 test('LOADERS의 문제는 목록에 있고 load가 붙어 있음', () => {
   for (const id of Object.keys(LOADERS)) assert.ok(findProblem(id)?.meta.load, id);
@@ -30,7 +30,7 @@ test('없는 id와 Object 속성 이름은 찾지 못하고, 있는 id는 유형
 });
 test('검색: 제목, 유형 이름, 정석 이름으로 거르고 대소문자와 띄어쓰기는 가리지 않음', () => {
   const ids = (q: string) => searchCatalog(q).map((g) => [g.category.id, g.problems.length]);
-  assert.equal(searchCatalog('').length, 11);
+  assert.equal(searchCatalog('').length, 17);
   assert.deepEqual(ids('이분'), [['binary-search', 6]]);
   assert.deepEqual(ids('bfs'), [['dfs-bfs', 10], ['graph', 1]]);
   assert.deepEqual(ids(' 게임맵 '), [['dfs-bfs', 1]]);

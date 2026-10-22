@@ -14,7 +14,7 @@ interface SidebarProps {
   onPick: () => void; // 문제를 골랐을 때(서랍이면 닫는다)
 }
 
-const TIERS = [1, 2, 3] as const;
+const TIERS = [1, 2, 3, 4] as const;
 
 // 문제 화면 왼쪽 목록(catalog.html 시안 B안): 빈도 단계 → 유형(펼치기/접기) → 문제.
 // 지금 문제의 유형은 펼쳐 두고, 사용자가 직접 펼치거나 접은 유형은 그 선택을 따른다. 검색 중에는 맞는 유형을 모두 펼친다.

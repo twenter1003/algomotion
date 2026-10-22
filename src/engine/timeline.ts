@@ -1,4 +1,4 @@
-import type { Action, AlgorithmStep, Language, Scene, Visualization } from './model.ts';
+import type { Action, AlgorithmStep, CodeHighlights, Scene, Visualization } from './model.ts';
 
 // 1× 기준 동작 길이(ms). 무대는 이 시각표대로 움직이고, 재생기는 진행 막대를 이 길이에 맞춰 흘린다.
 export const DUR = { focus: 200, unfocus: 200, set: 260, setMove: 420, add: 460, remove: 460, arrow: 300, clearMarks: 180, trace: 1200 } as const;
@@ -41,7 +41,7 @@ export interface Tick {
   stepTitle: string;
   label: string;
   caption: string;
-  codeHighlights: Record<Language, number[]>;
+  codeHighlights: CodeHighlights;
   variables: Record<string, string | number>;
   work: number;
   workNote?: string;

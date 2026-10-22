@@ -1,5 +1,8 @@
 // 장면, 동작, 단계, 풀이, 문제, 유형 타입. 이후 모든 작업이 기대는 계약이다.
 export type Language = 'python' | 'javascript';
+export type CodeLanguage = Language | 'sql';
+export type CodeHighlights = Record<Language, number[]> & { sql?: number[] };
+export type CodeMap = Record<Language, string> & { sql?: string };
 export type Rank = 'BEST' | 'ALTERNATIVE' | 'TRAP';
 export type Point = [number, number];
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -26,10 +29,10 @@ export type Action = (
   | { type: 'trace'; id: string; points: Point[] }      // line 물체를 처음부터 끝까지 그어 나감
   | { type: 'wait'; ms: number }
 ) & { together?: boolean };                             // 바로 앞 동작과 동시에 시작
-export interface Phase { label: string; caption: string; actions: Action[]; codeHighlights?: Record<Language, number[]> }
+export interface Phase { label: string; caption: string; actions: Action[]; codeHighlights?: CodeHighlights }
 export interface AlgorithmStep {
   title: string; phases: Phase[]; scene: Scene;
-  codeHighlights: Record<Language, number[]>; variables: Record<string, string | number>;
+  codeHighlights: CodeHighlights; variables: Record<string, string | number>;
   work: number; workNote?: string; answer?: unknown; isKeyframe?: boolean;
 }
 export interface Visualization { initial: Scene; steps: AlgorithmStep[] }
@@ -37,11 +40,12 @@ export interface Approach {
   id: string; name: string; rank: Rank; trap?: 'wrong' | 'slow';   // rank가 TRAP이면 trap 필수
   timeComplexity: string; spaceComplexity: string;
   verdict: string; pros: string[]; cons: string[]; whyThisRank: string;
-  code: Record<Language, string>;
+  code: CodeMap;
   visualize: () => Visualization;                                  // 문제의 demo.input으로 돌린다
 }
 export type CategoryId = 'dfs-bfs' | 'brute-force' | 'dp' | 'greedy' | 'hash' | 'stack-queue'
-  | 'binary-search' | 'sort' | 'heap' | 'graph' | 'two-pointer';
+  | 'binary-search' | 'sort' | 'heap' | 'graph' | 'two-pointer'
+  | 'sql-select' | 'sql-aggregate' | 'sql-group-by' | 'sql-is-null' | 'sql-join' | 'sql-string-date';
 export interface Problem {
   id: string; title: string; level: 2 | 3; category: CategoryId; sourceUrl: string;
   description: { summary: string; rules: string[]; examples: { input: string; output: string }[] };
@@ -52,4 +56,4 @@ export interface Problem {
   checks: { cases: { args: unknown[]; expected: unknown }[]; random: (rand: () => number) => unknown[] };
 }
 export interface ProblemMeta { id: string; title: string; level: 2 | 3; sourceUrl: string; bestName: string; load?: () => Promise<Problem> }
-export interface Category { id: CategoryId; name: string; tier: 1 | 2 | 3; idea: string; problems: ProblemMeta[] }
+export interface Category { id: CategoryId; name: string; tier: 1 | 2 | 3 | 4; idea: string; problems: ProblemMeta[] }
