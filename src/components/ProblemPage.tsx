@@ -47,11 +47,25 @@ const Notice: React.FC<{ text: string }> = ({ text }) => (
 );
 
 // 본문 자리의 실패 안내: 문제를 불러오지 못했거나, 그리거나 시각화를 만들다 오류가 났을 때
-const Failed: React.FC<{ meta: ProblemMeta; text: string }> = ({ meta, text }) => (
+const Failed: React.FC<{ meta: ProblemMeta; text: string; onRetry?: () => void }> = ({ meta, text, onRetry }) => (
   <div className="problem-main">
     <ProblemHead meta={meta} />
     <p role="alert">{text}</p>
-    <a href="#/">홈으로</a>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '12px' }}>
+      <button
+        type="button"
+        className="btn-outline"
+        onClick={() => {
+          if (onRetry) onRetry();
+          else window.location.reload();
+        }}
+      >
+        새로고침
+      </button>
+      <a className="btn-outline" href="#/">
+        홈으로
+      </a>
+    </div>
   </div>
 );
 
@@ -258,6 +272,7 @@ const ProblemBody: React.FC<{
   const { id } = meta;
   const [problem, setProblem] = useState<Problem>();
   const [failed, setFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [active, setActive] = useState(0); // 고른 풀이 번호
   const [comparing, setComparing] = useState(false);
   const [language, setLanguage] = useState<CodeLanguage>('python');
@@ -274,18 +289,38 @@ const ProblemBody: React.FC<{
         progress.setLast(id);
       },
       () => {
-        if (alive) setFailed(true);
+        if (!alive) return;
+        // 배포 직후 이전 해시 청크를 찾지 못한 경우(404) 1회 자동 새로고침 시도
+        const retrySessionKey = `chunk_retry_${id}`;
+        if (!sessionStorage.getItem(retrySessionKey)) {
+          sessionStorage.setItem(retrySessionKey, '1');
+          window.location.reload();
+          return;
+        }
+        setFailed(true);
       },
     );
     return () => {
       alive = false;
     };
-  }, [id, load]);
+  }, [id, load, retryCount]);
 
   // 세 풀이의 시각화는 한 번만 만든다(탭, 나란히 비교, 비교 막대가 같이 씀)
   const vizs = useMemo(() => problem?.approaches.map((a) => a.visualize()), [problem]);
 
-  if (failed) return <Failed meta={meta} text="문제를 불러오지 못했습니다." />;
+  if (failed) {
+    return (
+      <Failed
+        meta={meta}
+        text="문제를 불러오지 못했습니다."
+        onRetry={() => {
+          sessionStorage.removeItem(`chunk_retry_${id}`);
+          setFailed(false);
+          setRetryCount((c) => c + 1);
+        }}
+      />
+    );
+  }
   if (!problem || !vizs) {
     return (
       <div className="problem-main">
