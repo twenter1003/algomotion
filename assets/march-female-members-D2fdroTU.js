@@ -1,0 +1,71 @@
+import{n as e,t}from"./index-Cf02qAUa.js";import{c as n,l as r,o as i,r as a}from"./shared-CL29HWIp.js";var o=20,s=class extends r{caption=``;acts=[];keyframe=!1;step(e){this.settle(!1),this.keyframe=!!e.isKeyframe,super.step(e)}phase(e,t,n){this.settle(!0),super.phase(e,t,n),this.caption=t,this.acts=[]}do(...e){super.do(...e),this.acts.push(...e)}finish(){return this.settle(!1),super.finish()}settle(n){if(!this.caption)return;let r=n?140:this.keyframe?t:320,i=e({phases:[{label:``,caption:``,actions:this.acts}]}).phases[0],a=Math.max(0,...i.actions.map(e=>e.start+e.duration)),s=o*[...this.caption].length-r-a;this.caption=``,s>0&&a+s>i.end&&super.do({type:`wait`,ms:Math.ceil(s)})}},c=[[`M05`,`김민서`,`W`,`1993-03-12`,`010-1111-2222`],[`M01`,`이준호`,`M`,`1992-03-05`,`010-2222-3333`],[`M03`,`박서연`,`W`,`1995-03-21`,null],[`M02`,`최지우`,`W`,`1994-03-08`,`010-4444-5555`],[`M04`,`정하은`,`W`,`1996-07-19`,`010-5555-6666`],[`M06`,`한소희`,`W`,`1991-11-30`,`010-6666-7777`]],l=c.length,u=[[`M02`,`최지우`,`W`,`1994-03-08`],[`M05`,`김민서`,`W`,`1993-03-12`]],d={sql:`SELECT MEMBER_ID, MEMBER_NAME, GENDER,
+       DATE_FORMAT(DATE_OF_BIRTH, '%Y-%m-%d') AS DATE_OF_BIRTH
+FROM MEMBER_PROFILE
+WHERE MONTH(DATE_OF_BIRTH) = 3
+  AND GENDER = 'W'
+  AND TLNO IS NOT NULL
+ORDER BY MEMBER_ID ASC;`,python:`def solution(members):
+    # WHERE: 3월생 + 여성('W') + 전화번호 IS NOT NULL
+    filtered = [
+        [m_id, name, gender, birth[:10]]
+        for m_id, name, gender, birth, tlno in members
+        if int(birth[5:7]) == 3 and gender == 'W' and tlno is not None
+    ]
+    # ORDER BY MEMBER_ID ASC
+    filtered.sort(key=lambda r: r[0])
+    return filtered`,javascript:`function solution(members) {
+  // WHERE: 3월생 + 여성('W') + 전화번호 IS NOT NULL
+  const filtered = members
+    .filter(([id, name, gender, birth, tlno]) =>
+      Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== null)
+    .map(([id, name, gender, birth]) => [id, name, gender, birth.slice(0, 10)]);
+  // ORDER BY MEMBER_ID ASC
+  return filtered.sort((a, b) => a[0].localeCompare(b[0]));
+}`},f={from:i(d,[`FROM MEMBER_PROFILE`],[`for m_id, name, gender, birth, tlno in members`],[`const filtered = members`]),where:i(d,[`WHERE MONTH(DATE_OF_BIRTH) = 3`,`AND GENDER = 'W'`,`AND TLNO IS NOT NULL`],[`if int(birth[5:7]) == 3 and gender == 'W' and tlno is not None`],[`Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== null`]),order:i(d,[`ORDER BY MEMBER_ID ASC;`],[`filtered.sort(key=lambda r: r[0])`],[`return filtered.sort((a, b) => a[0].localeCompare(b[0]))`]),select:i(d,[`SELECT MEMBER_ID, MEMBER_NAME, GENDER,`],[`return filtered`],[`return filtered.sort((a, b) => a[0].localeCompare(b[0]))`])},p={sql:`SELECT MEMBER_ID, MEMBER_NAME, GENDER,
+       DATE_FORMAT(DATE_OF_BIRTH, '%Y-%m-%d') AS DATE_OF_BIRTH
+FROM (
+  SELECT * FROM MEMBER_PROFILE
+  ORDER BY MEMBER_ID ASC
+) S
+WHERE MONTH(DATE_OF_BIRTH) = 3
+  AND GENDER = 'W'
+  AND TLNO IS NOT NULL;`,python:`def solution(members):
+    # 서브쿼리에서 전체 회원을 먼저 정렬한 뒤 조건으로 거른다
+    sorted_all = sorted(members, key=lambda r: r[0])
+    result = []
+    for m_id, name, gender, birth, tlno in sorted_all:
+        if int(birth[5:7]) == 3 and gender == 'W' and tlno is not None:
+            result.append([m_id, name, gender, birth[:10]])
+    return result`,javascript:`function solution(members) {
+  // 서브쿼리에서 전체 회원을 먼저 정렬한 뒤 조건으로 거릅니다
+  const sortedAll = [...members].sort((a, b) => a[0].localeCompare(b[0]));
+  const result = [];
+  for (const [id, name, gender, birth, tlno] of sortedAll) {
+    if (Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== null) {
+      result.push([id, name, gender, birth.slice(0, 10)]);
+    }
+  }
+  return result;
+}`},m={sortAll:i(p,[`SELECT * FROM MEMBER_PROFILE`,`ORDER BY MEMBER_ID ASC`],[`sorted_all = sorted(members, key=lambda r: r[0])`],[`const sortedAll = [...members].sort`]),where:i(p,[`WHERE MONTH(DATE_OF_BIRTH) = 3`,`AND GENDER = 'W'`,`AND TLNO IS NOT NULL;`],[`for m_id, name, gender, birth, tlno in sorted_all:`,`if int(birth[5:7]) == 3 and gender == 'W' and tlno is not None:`],[`for (const [id, name, gender, birth, tlno] of sortedAll)`,`if (Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== null)`]),done:i(p,[`SELECT MEMBER_ID, MEMBER_NAME, GENDER,`],[`return result`],[`return result;`])},h={sql:`-- 함정: IS NOT NULL을 빼먹거나 TLNO != 'NULL'로 잘못 비교
+SELECT MEMBER_ID, MEMBER_NAME, GENDER,
+       DATE_FORMAT(DATE_OF_BIRTH, '%Y-%m-%d') AS DATE_OF_BIRTH
+FROM MEMBER_PROFILE
+WHERE MONTH(DATE_OF_BIRTH) = 3
+  AND GENDER = 'W'
+  AND TLNO != 'NULL'
+ORDER BY MEMBER_ID ASC;`,python:`def solution(members):
+    # 함정: tlno is not None 대신 문자열 'NULL'과만 비교해 None이 그대로 통과함
+    filtered = [
+        [m_id, name, gender, birth[:10]]
+        for m_id, name, gender, birth, tlno in members
+        if int(birth[5:7]) == 3 and gender == 'W' and tlno != 'NULL'
+    ]
+    filtered.sort(key=lambda r: r[0])
+    return filtered`,javascript:`function solution(members) {
+  // 함정: tlno !== null 대신 문자열 'NULL'과만 비교해 null이 그대로 통과합니다
+  const filtered = members
+    .filter(([id, name, gender, birth, tlno]) =>
+      Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== 'NULL')
+    .map(([id, name, gender, birth]) => [id, name, gender, birth.slice(0, 10)]);
+  return filtered.sort((a, b) => a[0].localeCompare(b[0]));
+}`},g={from:i(h,[`FROM MEMBER_PROFILE`],[`for m_id, name, gender, birth, tlno in members`],[`const filtered = members`]),where:i(h,[`WHERE MONTH(DATE_OF_BIRTH) = 3`,`AND GENDER = 'W'`,`AND TLNO != 'NULL'`],[`if int(birth[5:7]) == 3 and gender == 'W' and tlno != 'NULL'`],[`Number(birth.slice(5, 7)) === 3 && gender === 'W' && tlno !== 'NULL'`]),done:i(h,[`ORDER BY MEMBER_ID ASC;`],[`filtered.sort(key=lambda r: r[0])`,`return filtered`],[`return filtered.sort((a, b) => a[0].localeCompare(b[0]));`])},_=600,v=340,y=14,b=38,x=34,S=40,C=330,w=368,T=218,E=e=>({x:y,y:b+e*S,w:C,h:x}),D=e=>({x:w,y:b+e*S,w:T,h:x}),O=e=>`row:${e}`,k=e=>`out:${e}`,A=e=>`${e[0]} · ${e[1]} · ${e[2]} · ${e[3].slice(5,7)}월 · ${e[4]?`전화O`:`NULL`}`,j=e=>`${e[0]} · ${e[1]} (${e[3]})`;function M(){let e=[{id:`hdr:in`,kind:`text`,rect:{x:y,y:10,w:C,h:22},tone:`muted`,text:`MEMBER_PROFILE 테이블 (6행)`},{id:`hdr:out`,kind:`text`,rect:{x:w,y:10,w:T,h:22},tone:`chosen`,text:`SELECT 결과 행`},{id:`status`,kind:`token`,rect:{x:y,y:292,w:572,h:32},tone:`plain`,text:`쿼리 실행 대기`}];return c.forEach((t,n)=>{e.push({id:O(n),kind:`token`,rect:E(n),tone:`plain`,text:A(t)})}),{width:_,height:v,items:e}}var N=e=>({type:`wait`,ms:e}),P=(e,t)=>({type:`set`,id:e,patch:{tone:t}});function F(){let e=new s(M()),t=0,r=[],i=(e,n=`-`)=>({work:t,variables:{절:e,회원:n,통과수:r.length}});return e.step({title:`FROM MEMBER_PROFILE: 6개 회원 행 스캔 시작`,codeHighlights:f.from,...i(`FROM`)}),e.phase(`테이블 읽기`,`FROM 절이 MEMBER_PROFILE 테이블의 6개 행을 차례대로 읽으며 WHERE 조건을 검사합니다.`,f.from),e.do({type:`set`,id:`status`,patch:{text:`FROM MEMBER_PROFILE → WHERE 조건 검사 시작`,tone:`chosen`},pop:!0},N(200)),c.forEach((a,o)=>{let[s,c,l,u,d]=a,p=Number(u.slice(5,7)),m=p===3&&l===`W`&&d!==null;t+=1;let h=p===3?l===`W`?d===null?`TLNO IS NULL 제외`:`3월·여성·전화번호 있음`:`남성(M) 제외`:`${p}월생 제외`;if(m&&r.push(a),e.step({title:`WHERE 검사: ${s} ${c} → ${m?`통과`:h}`,codeHighlights:f.where,...i(`WHERE`,`${s}(${c})`)}),e.phase(`WHERE 검사`,`${s} ${c} 행을 살핍니다: ${u.slice(0,7)}, 성별 ${l}, 전화번호 ${d??`NULL`} → ${h}.`,f.where),e.do(...n([{type:`focus`,ids:[O(o)]},P(O(o),m?`good`:`explored`)]),N(180)),m){let t=r.length-1;e.phase(`결과 후보 추가`,`세 조건을 모두 만족하므로 ${s}(${c}) 행을 결과 후보 목록에 담습니다.`,f.where),e.do({type:`add`,item:{id:k(t),kind:`token`,rect:D(t),tone:`chosen`,text:j(a)},from:O(o)},{type:`unfocus`},P(O(o),`visited`))}else e.phase(`행 제외`,`조건에 맞지 않는 ${s} 행은 정렬 단계로 넘기지 않고 바로 버립니다.`,f.where),e.do({type:`unfocus`},P(O(o),`muted`))}),t+=r.length,e.step({title:`ORDER BY MEMBER_ID ASC: 살아남은 ${r.length}행만 정렬`,codeHighlights:f.order,...i(`ORDER BY`,`M02, M05`)}),e.phase(`정렬하기`,`WHERE에서 살아남은 ${r.length}건(M05, M02)만 MEMBER_ID 오름차순(M02 → M05)으로 자리를 바꿉니다.`,f.order),e.do(...n([{type:`set`,id:k(0),patch:{text:j(c[3]),tone:`current`},pop:!0},{type:`set`,id:k(1),patch:{text:j(c[0]),tone:`current`},pop:!0},{type:`set`,id:`status`,patch:{text:`ORDER BY MEMBER_ID ASC → M02, M05 순서 확정`,tone:`chosen`},pop:!0}]),N(200)),e.step({title:`SELECT 완료: ${a(u.length,`건`,`건`)} 출력 (행 연산 ${t}회)`,codeHighlights:f.select,...i(`SELECT`,`완료`),answer:u,isKeyframe:!0}),e.phase(`마무리`,`먼저 WHERE로 6행을 2행으로 줄인 뒤 정렬해 총 ${t}번의 행 처리로 정답 2건을 얻었습니다.`,f.select),e.do(...n([P(k(0),`path`),P(k(1),`path`),{type:`set`,id:`status`,patch:{text:`정답: [M02 최지우, M05 김민서] (2건)`,tone:`path`},pop:!0}])),e.finish()}function I(){let e=new s(M()),t=0,r=[...c].sort((e,t)=>e[0].localeCompare(t[0])),i=[],a=(e,n=`-`)=>({work:t,variables:{절:e,회원:n,통과수:i.length}});return t+=l,e.step({title:`서브쿼리 ORDER BY: 전체 ${l}행을 먼저 ID 순으로 정렬`,codeHighlights:m.sortAll,...a(`서브쿼리 ORDER BY`)}),e.phase(`전체 정렬`,`조건으로 거르기 전에 버려질 행까지 포함한 ${l}행 전체를 먼저 MEMBER_ID 오름차순으로 정렬합니다.`,m.sortAll),e.do(...n([...r.map((e,t)=>({type:`set`,id:O(t),patch:{text:A(e),tone:`chosen`},pop:!0})),{type:`set`,id:`status`,patch:{text:`전체 ${l}행 정렬 완료 (불필요한 4행까지 정렬 비용 발생)`,tone:`chosen`},pop:!0}]),N(220)),r.forEach((r,o)=>{let[s,c,l,u,d]=r,f=Number(u.slice(5,7))===3&&l===`W`&&d!==null;if(t+=1,f&&i.push(r),e.step({title:`바깥 WHERE 검사: ${s} ${c} → ${f?`통과`:`제외`}`,codeHighlights:m.where,...a(`WHERE`,`${s}(${c})`)}),e.phase(`뒤늦은 필터`,`이미 정렬된 ${s}(${c}) 행이 3월생 여성이고 전화번호가 있는지 확인합니다.`,m.where),f){let t=i.length-1;e.do(...n([P(O(o),`visited`),{type:`add`,item:{id:k(t),kind:`token`,rect:D(t),tone:`chosen`,text:j(r)},from:O(o)}]),N(160))}else e.do(P(O(o),`muted`),N(160))}),e.step({title:`SELECT 완료: 정답은 같지만 행 처리 ${t}회`,codeHighlights:m.done,...a(`SELECT`,`완료`),answer:u,isKeyframe:!0}),e.phase(`마무리`,`결과는 같지만 걸러질 4행까지 미리 정렬하느라 총 ${t}번(정석은 8번) 행을 다뤘습니다.`,m.done),e.do(...n([P(k(0),`path`),P(k(1),`path`),{type:`set`,id:`status`,patch:{text:`정답 2건 동일 (전체 정렬로 행 연산 ${t}회)`,tone:`path`},pop:!0}])),e.finish()}function L(){let e=new s(M()),t=0,r=[],i=(e,n=`-`)=>({work:t,variables:{절:e,회원:n,통과수:r.length}});e.step({title:`함정 쿼리: TLNO IS NOT NULL 대신 TLNO != 'NULL' 사용`,codeHighlights:g.from,...i(`FROM`)}),e.phase(`함정 시작`,`SQL에서 NULL은 값이 없음을 뜻하므로 IS NOT NULL로만 걸러야 합니다. 문자열 'NULL'과 비교하거나 조건을 빠뜨린 경우를 봅니다.`,g.from),e.do({type:`set`,id:`status`,patch:{text:`WHERE TLNO != 'NULL' 잘못된 비교 시작`,tone:`bad`},pop:!0},N(200)),c.forEach((a,o)=>{let[s,c,l,u,d]=a,f=Number(u.slice(5,7)),p=f===3&&l===`W`&&d!==`NULL`;if(t+=1,p&&r.push(a),e.step({title:`WHERE 검사: ${s} ${c} → ${d===null&&p?`NULL인데 통과(함정!)`:p?`통과`:`제외`}`,codeHighlights:g.where,...i(`WHERE`,`${s}(${c})`)}),e.phase(`조건 확인`,d===null&&p?`${s} ${c}은 전화번호가 NULL인데, IS NOT NULL로 거르지 않아 결과에 잘못 포함됩니다!`:`${s} ${c} 행의 생월(${f}월)과 성별(${l})을 확인합니다.`,g.where),p){let t=r.length-1;e.do(...n([P(O(o),d===null?`bad`:`visited`),{type:`add`,item:{id:k(t),kind:`token`,rect:D(t),tone:d===null?`bad`:`chosen`,text:`${j(a)}${d===null?` [NULL]`:``}`},from:O(o)}]),N(180))}else e.do(P(O(o),`muted`),N(160))});let a=[...r].sort((e,t)=>e[0].localeCompare(t[0])).map(([e,t,n,r])=>[e,t,n,r.slice(0,10)]);return t+=r.length,e.step({title:`오답: 전화번호 NULL인 M03 포함 ${a.length}건 반환 (정답은 2건)`,codeHighlights:g.done,...i(`ORDER BY`,`오답`),answer:a,isKeyframe:!0}),e.phase(`오답 확인`,`전화번호가 NULL인 박서연(M03)이 걸러지지 않아 3건이 출력되었습니다. 반드시 TLNO IS NOT NULL을 써야 합니다.`,g.done),e.do({type:`set`,id:`status`,patch:{text:`오답: M03(박서연, TLNO=NULL) 포함 3건 반환 · 정답은 M02, M05 2건`,tone:`bad`},pop:!0}),e.finish()}var R={id:`march-female-members`,title:`3월에 태어난 여성 회원 목록 출력하기`,level:2,category:`sql-select`,sourceUrl:`https://school.programmers.co.kr/learn/courses/30/lessons/131120`,description:{summary:`MEMBER_PROFILE 테이블에서 생일이 3월인 여성 회원의 ID, 이름, 성별, 생년월일(YYYY-MM-DD)을 조회합니다. 이때 전화번호(TLNO)가 NULL인 회원은 출력 대상에서 제외하고, 회원 ID를 기준으로 오름차순 정렬합니다.`,rules:[`DATE_OF_BIRTH의 데이트 포맷이 예시(YYYY-MM-DD)와 동일해야 정답 처리됨`,`전화번호(TLNO)가 NULL인 경우는 출력 대상에서 제외(IS NOT NULL)`,`성별(GENDER)은 여성인 W만 조회하며 결과는 MEMBER_ID 오름차순 정렬`],examples:[{input:`MEMBER_PROFILE = [["M05","김민서","W","1993-03-12","010-1111-2222"], ["M03","박서연","W","1995-03-21",null], ["M02","최지우","W","1994-03-08","010-4444-5555"]]`,output:`[["M02","최지우","W","1994-03-08"], ["M05","김민서","W","1993-03-12"]]`}]},keyIntuitions:[`SQL 쿼리의 논리적 실행 순서는 FROM → WHERE → SELECT → ORDER BY입니다. WHERE에서 먼저 행을 줄여 두면 정렬할 행 수가 확 줄어듭니다.`,`날짜에서 월만 뽑을 때는 MONTH(DATE_OF_BIRTH) = 3을 쓰고, 출력 형식은 DATE_FORMAT(DATE_OF_BIRTH, "%Y-%m-%d")로 시간 부분을 잘라냅니다.`,`NULL 여부는 등호(=, !=)로 비교할 수 없고 반드시 IS NOT NULL로 검사해야 합니다.`],demo:{input:[c],label:`MEMBER_PROFILE 6행 (3월 여성 유선 2명, 3월 여성 NULL 1명, 그 외 3명)`},workUnit:`처리한 테이블 행 수`,approaches:[{id:`march-female-where-first`,name:`WHERE 3월·여성·IS NOT NULL`,rank:`BEST`,timeComplexity:`O(N + K log K)`,spaceComplexity:`O(K)`,verdict:`WHERE 절에서 3월생·여성·전화번호 존재 여부를 한 번에 걸러 살아남은 K건만 정렬하는 정석 쿼리입니다.`,pros:[`6행 중 조건을 통과한 2행만 정렬하므로 ORDER BY 비용이 최소화됩니다.`,`MONTH(), IS NOT NULL, DATE_FORMAT() 표준 구문을 직관적으로 조합합니다.`],cons:[`DATE_OF_BIRTH를 그대로 출력하면 시:분:초가 붙어 틀릴 수 있으므로 포맷 지정이 필요합니다.`],whyThisRank:`SQL 엔진이 가장 효율적으로 최적화하는 WHERE 필터 후 ORDER BY 구조입니다.`,code:d,visualize:F},{id:`march-female-sort-subquery`,name:`서브쿼리로 전체 정렬 후 WHERE 필터`,rank:`ALTERNATIVE`,timeComplexity:`O(N log N)`,spaceComplexity:`O(N)`,verdict:`인라인 뷰에서 전체 회원을 먼저 ID 순으로 정렬한 뒤 바깥에서 조건으로 거르는 풀이입니다.`,pros:[`정렬된 상태를 먼저 눈으로 확인하며 단계별로 생각하기 쉽습니다.`],cons:[`조건에 맞지 않아 버려질 행까지 모두 정렬에 참여하므로 불필요한 정렬 비용이 듭니다.`],whyThisRank:`결과는 같지만 걸러낸 뒤 정렬하는 정석보다 다루는 행 수가 많습니다.`,code:p,visualize:I},{id:`march-female-null-string-trap`,name:`TLNO != 'NULL' 비교 또는 NULL 조건 누락`,rank:`TRAP`,trap:`wrong`,timeComplexity:`O(N + K log K)`,spaceComplexity:`O(K)`,verdict:`IS NOT NULL 대신 문자열 'NULL'과 비교하거나 조건을 빼먹어 전화번호가 없는 회원이 출력되는 함정입니다.`,pros:[`문법 오류가 나지 않아 실행 자체는 됩니다.`],cons:[`전화번호가 NULL인 3월생 여성 회원(M03)이 걸러지지 않아 오답이 됩니다.`],whyThisRank:`SQL 입문에서 가장 흔한 실수가 NULL을 일반 문자열이나 값처럼 비교하는 것입니다.`,code:h,visualize:L}],checks:{cases:[{args:[c],expected:u},{args:[[[`A2`,`김하나`,`W`,`2000-03-01`,`010-1234-5678`],[`A1`,`이둘`,`W`,`2000-03-15`,null]]],expected:[[`A2`,`김하나`,`W`,`2000-03-01`]]},{args:[[[`B1`,`박셋`,`M`,`1999-03-10`,`010-9999-0000`]]],expected:[]}],random:e=>{let t=3+Math.floor(e()*5);return[Array.from({length:t},(n,r)=>{let i=`M0${t-r}`,a=`회원${r+1}`,o=e()<.65?`W`:`M`,s=e()<.6?`03`:`07`,c=e()<.7?`010-0000-000${r}`:null;return[i,a,o,`199${r%9}-${s}-15`,c]})]}}};export{R as default};

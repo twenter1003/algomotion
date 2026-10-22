@@ -1,0 +1,1 @@
+import{n as e,t}from"./index-D3a9ZpZK.js";function n(n){for(let r of n.steps)r.phases.forEach((n,i)=>{let a=e(r).phases[i],o=Math.max(0,...a.actions.map(e=>e.start+e.duration-a.start)),s=i+1<r.phases.length?140:r.isKeyframe?t:320,c=n.caption.length*20-s;c>Math.max(500,o)&&n.actions.push({type:`wait`,ms:c-o})});return n}export{n as t};

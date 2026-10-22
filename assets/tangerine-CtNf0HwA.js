@@ -1,0 +1,64 @@
+import{i as e,r as t,s as n}from"./shared-e6uNbDLo.js";import{t as r}from"./paced-DMEp_Mu1.js";var i=11,a=[7,3,8,5,1,7,6,8,2,5,8,7,4,6],o=a.length,s=[...new Set(a)],c=s.length,l=e=>a.flatMap((t,n)=>t===e?[n]:[]),u=e=>l(e).length,d=[...s].sort((e,t)=>u(t)-u(e)),f=Math.round(c*Math.log2(c)),p=e=>`[${e.join(`, `)}]`,m=[];{let e=i;for(let t of d)if(m.push({size:t,before:e,after:e-u(t)}),e-=u(t),e<=0)break}var h={python:`from collections import Counter
+
+def solution(k, tangerine):
+    counts = Counter(tangerine)                      # 크기별 개수
+    answer = 0
+    for c in sorted(counts.values(), reverse=True):  # 개수가 많은 크기부터
+        k -= c                                       # 이 크기를 통째로 담는다
+        answer += 1
+        if k <= 0:                                   # 상자가 찼다
+            break
+    return answer`,javascript:`function solution(k, tangerine) {
+  const counts = new Map();
+  for (const size of tangerine) counts.set(size, (counts.get(size) ?? 0) + 1); // 크기별 개수
+  let answer = 0;
+  for (const c of [...counts.values()].sort((a, b) => b - a)) { // 개수가 많은 크기부터
+    k -= c; // 이 크기를 통째로 담는다
+    answer++;
+    if (k <= 0) break; // 상자가 찼다
+  }
+  return answer;
+}`},g={count:e(h,[`counts = Counter(tangerine)`,`answer = 0`],[`const counts = new Map()`,`for (const size of tangerine)`,`let answer = 0`]),sort:e(h,[`for c in sorted(counts.values(), reverse=True)`],[`for (const c of [...counts.values()].sort`]),next:e(h,[`for c in sorted(counts.values(), reverse=True)`],[`for (const c of [...counts.values()].sort`]),take:e(h,[`k -= c`,`answer += 1`],[`k -= c`,`answer++`]),check:e(h,[`if k <= 0`,`break`],[`if (k <= 0)`,`break`]),done:e(h,[`return answer`],[`return answer`])},_={python:`def solution(k, tangerine):
+    counts = {}
+    for size in tangerine:                           # 크기별 개수
+        counts[size] = counts.get(size, 0) + 1
+    answer = 0
+    while k > 0:                                     # 상자가 찰 때까지
+        best = max(counts, key=counts.get)           # 남은 크기 중 가장 많은 것을 매번 처음부터 찾는다
+        k -= counts.pop(best)                        # 그 크기를 통째로 담는다
+        answer += 1
+    return answer`,javascript:`function solution(k, tangerine) {
+  const counts = new Map();
+  for (const size of tangerine) counts.set(size, (counts.get(size) ?? 0) + 1); // 크기별 개수
+  let answer = 0;
+  while (k > 0) { // 상자가 찰 때까지
+    let best = -1; // 남은 크기 중 가장 많은 것을 매번 처음부터 찾는다
+    for (const [size, c] of counts) if (best < 0 || c > counts.get(best)) best = size;
+    k -= counts.get(best); // 그 크기를 통째로 담는다
+    counts.delete(best);
+    answer++;
+  }
+  return answer;
+}`},v={count:e(_,[`counts = {}`,`for size in tangerine`,`answer = 0`],[`const counts = new Map()`,`for (const size of tangerine)`,`let answer = 0`]),find:e(_,[`while k > 0`,`best = max(counts, key=counts.get)`],[`while (k > 0)`,`let best = -1`,`for (const [size, c] of counts)`]),take:e(_,[`k -= counts.pop(best)`,`answer += 1`],[`k -= counts.get(best)`,`counts.delete(best)`,`answer++`]),check:e(_,[`while k > 0`],[`while (k > 0)`]),done:e(_,[`while k > 0`,`return answer`],[`while (k > 0)`,`return answer`])},y={python:`def solution(k, tangerine):
+    counts = []
+    for size in dict.fromkeys(tangerine):            # 크기 종류마다 (처음 나온 순서)
+        counts.append(tangerine.count(size))         # 매번 귤 전체를 처음부터 끝까지 훑는다
+    answer = 0
+    for c in sorted(counts, reverse=True):           # 개수가 많은 크기부터
+        k -= c
+        answer += 1
+        if k <= 0:
+            break
+    return answer`,javascript:`function solution(k, tangerine) {
+  const counts = [];
+  for (const size of new Set(tangerine)) { // 크기 종류마다 (처음 나온 순서)
+    counts.push(tangerine.filter((x) => x === size).length); // 매번 귤 전체를 처음부터 끝까지 훑는다
+  }
+  let answer = 0;
+  for (const c of counts.sort((a, b) => b - a)) { // 개수가 많은 크기부터
+    k -= c;
+    answer++;
+    if (k <= 0) break;
+  }
+  return answer;
+}`},b={scan:e(y,[`for size in dict.fromkeys(tangerine)`,`counts.append(tangerine.count(size))`],[`for (const size of new Set(tangerine))`,`counts.push(tangerine.filter`]),sort:e(y,[`answer = 0`,`for c in sorted(counts, reverse=True)`],[`let answer = 0`,`for (const c of counts.sort`]),next:e(y,[`for c in sorted(counts, reverse=True)`],[`for (const c of counts.sort`]),take:e(y,[`k -= c`,`answer += 1`],[`k -= c`,`answer++`]),check:e(y,[`if k <= 0`,`break`],[`if (k <= 0)`,`break`]),done:e(y,[`return answer`],[`return answer`])},x=30,S=34,C=330,w=80,T=560,E=340,D=e=>({x:70+e*S,y:0,w:x,h:x}),O=e=>52+e*36,k=(e,t)=>({x:70+t*S,y:O(e),w:x,h:x}),A=e=>({x:0,y:O(e),w:64,h:x}),j=e=>({x:C+e%4*S,y:w+Math.floor(e/4)*S,w:x,h:x}),M={x:C,y:196,w:132,h:28},N={x:C,y:262,w:132,h:28},P=e=>`in:${e}`,F=e=>`t:${e}`,I=e=>`row:${e}`,L=e=>({type:`wait`,ms:e}),R=(...e)=>n([{type:`unfocus`},{type:`clearMarks`},...e]),z=(e,t)=>e.map(e=>({type:`set`,id:e,patch:{tone:t}})),B=e=>({type:`set`,id:`tok:k`,patch:{text:`남은 k = ${e}`,tone:`chosen`},pop:!0}),V=e=>({type:`set`,id:`tok:ans`,patch:{text:`크기 종류 ${e}개`,tone:`chosen`},pop:!0});function H(){let e=Array.from({length:i},(e,t)=>({id:`slot:${t}`,kind:`zone`,rect:j(t)}));return e.push({id:`lab:in`,kind:`text`,rect:{x:0,y:0,w:64,h:x},text:`귤`},{id:`lab:box`,kind:`text`,rect:{x:C,y:52,w:132,h:22},text:`상자 (k = ${i})`},{id:`tok:k`,kind:`token`,rect:M,tone:`plain`,text:`남은 k = ${i}`},{id:`tok:ans`,kind:`token`,rect:N,tone:`plain`,text:`크기 종류 0개`}),a.forEach((t,n)=>e.push({id:P(n),kind:`cell`,rect:D(n),tone:`plain`,text:String(t)})),{width:T,height:E,items:e}}var U=(e,t)=>n([...l(e).map((n,r)=>({type:`add`,item:{id:F(n),kind:`cell`,rect:k(t,r),tone:`plain`,text:String(e)},from:P(n)})),{type:`add`,item:{id:I(e),kind:`text`,rect:A(t),text:`크기 ${e}`}},...z(l(e).map(P),`explored`)]),W=e=>n(e.flatMap((e,t)=>[{type:`set`,id:I(e),patch:{rect:A(t)}},...l(e).map((e,n)=>({type:`set`,id:F(e),patch:{rect:k(t,n)}}))])),G=(e,t)=>{let n=l(e).slice(0,i-t);return{acts:[...n.map((e,n)=>({type:`set`,id:F(e),patch:{rect:j(t+n),tone:`chosen`}})),{type:`set`,id:I(e),patch:{tone:`muted`}}],ids:n.map(F)}};function K(e,{size:r,before:i,after:a},o,s,c){let l=u(r),{acts:d,ids:f}=G(r,s);return e.phase(`담기`,`크기 ${r} 귤 ${l}개를 통째로 상자에 담습니다. k = ${i} − ${l} = ${t(a,`이`,`가`)} 되고, 쓴 크기 종류는 ${o}개입니다.`,c.take),e.do(...R()),e.do(...n([...d,B(a),V(o)])),e.phase(`확인하기`,a>0?`k = ${t(a,`이`,`가`)} 0보다 커서 상자가 아직 차지 않았습니다. 다음 크기로 갑니다.`:`k = ${t(a,`이`,`가`)} 0 이하라 상자가 찼습니다. 반복을 멈춥니다.`,c.check),e.do({type:`arrow`,from:`tok:k`,to:`tok:ans`,verdict:a>0?`new`:`good`,label:a>0?`${a} > 0 계속`:`${a} ≤ 0 끝`},L(450)),f}function q(e,t,r,i){let a=l(t).map(F);e.phase(`고르기`,`${r===1?`개수가 가장 많은`:`다음으로 많은`} 크기 ${t}(${u(t)}개)를 고릅니다.`,i.next),e.do(...n([{type:`focus`,ids:a},...z(a,`current`)]),L(250))}var J=Math.max(...s.map(u)),Y=s.filter(e=>u(e)===J).join(`, `);function X(){let e=new r(H()),[a,l,p]=[i,0,0],h=0,_,v=[],y=()=>({work:p,variables:{k:a,answer:l,c:h||`-`},..._?{workNote:_}:{}});return p=o,e.step({title:`크기별로 세기: ${c}종류`,codeHighlights:g.count,...y()}),e.phase(`세기`,`귤 ${o}개를 하나씩 보며 크기별 개수를 셉니다. 크기는 ${c}종류이고, ${t(Y,`이`,`가`)} ${J}개로 가장 많습니다.`,g.count),e.do(...n(s.flatMap((e,t)=>U(e,t)),!0)),_=`+ 개수 정렬 약 ${f}번`,e.step({title:`개수가 많은 순으로 정렬`,codeHighlights:g.sort,...y()}),e.phase(`정렬하기`,`개수가 많은 크기가 위로 오도록 정렬합니다. 개수가 같으면 먼저 나온 크기가 위입니다.`,g.sort),e.do(...W(d)),m.forEach((t,n)=>{[a,h]=[t.after,u(t.size)],l=n+1,p++,e.step({title:`크기 ${t.size}(${h}개) 담기 → k = ${a}`,codeHighlights:g.take,...y()}),q(e,t.size,l,g),v.push(...K(e,t,l,i-t.before,g))}),h=0,e.step({title:`크기 종류 ${l}개`,codeHighlights:g.done,...y(),answer:l,isKeyframe:!0}),e.phase(`정답`,`크기 ${l}종류만 써서 귤 ${i}개를 채웠습니다. 개수가 많은 크기부터 담았으니 이보다 적은 종류로는 ${i}개를 채울 수 없습니다.`),e.do(...n([...z(v,`path`),{type:`set`,id:`tok:ans`,patch:{tone:`path`},pop:!0}])),e.finish()}function Z(){let e=new r(H()),[a,d,f]=[i,0,0],p=0,h=[],g=[...s],_=()=>({work:f,variables:{k:a,answer:d,best:p||`-`}});return f=o,e.step({title:`크기별로 세기: ${c}종류`,codeHighlights:v.count,..._()}),e.phase(`세기`,`귤 ${o}개를 하나씩 보며 크기별 개수를 셉니다. 크기는 ${c}종류이고, ${t(Y,`이`,`가`)} ${J}개로 가장 많습니다.`,v.count),e.do(...n(s.flatMap((e,t)=>U(e,t)),!0)),m.forEach((t,r)=>{let o=g.length,s=g.flatMap(e=>l(e).map(F)),c=u(t.size);[p,a]=[t.size,t.after],d=r+1,f+=o,g.splice(g.indexOf(t.size),1),e.step({title:`남은 ${o}종류에서 가장 많은 크기 ${p}(${c}개) 담기 → k = ${a}`,codeHighlights:v.take,..._()}),e.phase(`찾기`,`남은 크기 ${o}종류를 처음부터 훑어, 개수가 가장 많은 크기 ${p}(${c}개)를 찾습니다. 같은 개수면 먼저 만난 크기입니다.`,v.find),e.do(...n([{type:`focus`,ids:s},...z(l(p).map(F),`current`)]),L(600)),h.push(...K(e,t,d,i-t.before,{next:v.find,take:v.take,check:v.check}))}),p=0,e.step({title:`크기 종류 ${d}개`,codeHighlights:v.done,..._(),answer:d,isKeyframe:!0}),e.phase(`정답`,`크기 ${d}종류로 귤 ${i}개를 채웠습니다. 정석과 같은 답이지만 담을 때마다 남은 크기를 처음부터 훑어 ${f-o}번을 더 확인했습니다. 정렬은 한 번이면 됩니다.`),e.do(...n([...z(h,`path`),{type:`set`,id:`tok:ans`,patch:{tone:`path`},pop:!0}])),e.finish()}function Q(){let e=new r(H()),[a,h,g]=[i,0,0],[_,v]=[0,0],y=[],x=[],S,C=()=>({work:g,variables:{size:_||`-`,counts:p(y),c:v||`-`,k:a,answer:h},...S?{workNote:S}:{}});return s.forEach((r,i)=>{let a=l(r).map(P);[_,v]=[r,u(r)],y.push(v),g+=o,e.step({title:`크기 ${r}: 귤 ${o}개를 훑어 ${v}개`,codeHighlights:b.scan,...C()}),e.phase(`훑기`,`count(${r}): 귤 ${o}개를 처음부터 끝까지 훑어, 크기 ${t(r,`이`,`가`)} ${v}개임을 셉니다. 이미 센 귤도 크기마다 다시 봅니다.`,b.scan),e.do(...n([{type:`focus`,ids:a},...z(a,`current`)]),L(550)),e.phase(`묶기`,`크기 ${r} ${v}개를 ${i+1}번째 줄에 묶어 둡니다. 지금까지 귤을 ${g}번 확인했습니다.`,b.scan),e.do(...R()),e.do(...U(r,i))}),[_,v]=[0,0],S=`+ 개수 정렬 약 ${f}번`,e.step({title:`개수가 많은 순으로 정렬`,codeHighlights:b.sort,...C()}),e.phase(`정렬하기`,`개수가 많은 크기가 위로 오도록 정렬합니다. 여기부터는 정석과 같습니다.`,b.sort),e.do(...W(d)),m.forEach((t,n)=>{[a,v]=[t.after,u(t.size)],h=n+1,g++,e.step({title:`크기 ${t.size}(${v}개) 담기 → k = ${a}`,codeHighlights:b.take,...C()}),q(e,t.size,h,b),x.push(...K(e,t,h,i-t.before,b))}),v=0,e.step({title:`크기 종류 ${h}개`,codeHighlights:b.done,...C(),answer:h,isKeyframe:!0}),e.phase(`정답`,`답은 ${h}개로 맞지만, 크기마다 귤을 처음부터 훑어 ${c} × ${o} = ${c*o}번을 확인했습니다. 귤과 크기 종류가 10만이면 100억 번이라 시간 초과입니다.`),e.do(...n([...z(x,`path`),{type:`set`,id:`tok:ans`,patch:{tone:`path`},pop:!0}])),e.finish()}var $={id:`tangerine`,title:`귤 고르기`,level:2,category:`greedy`,sourceUrl:`https://school.programmers.co.kr/learn/courses/30/lessons/138476`,description:{summary:`귤을 한 상자에 k개 담아 팔려고 합니다. 상자가 보기 좋도록 서로 다른 크기의 종류를 되도록 적게 하고 싶을 때, 귤 k개를 고르면서 만들 수 있는 크기 종류 수의 최솟값을 구합니다.`,rules:[`1 ≤ k ≤ tangerine의 길이 ≤ 100,000`,`1 ≤ tangerine의 원소(귤 하나의 크기) ≤ 10,000,000`],examples:[{input:`k = 6, tangerine = [1, 3, 2, 5, 4, 5, 2, 3]`,output:`3`},{input:`k = 4, tangerine = [1, 3, 2, 5, 4, 5, 2, 3]`,output:`2`},{input:`k = 2, tangerine = [1, 1, 1, 1, 2, 2, 2, 3]`,output:`1`}]},keyIntuitions:[`상자에 담을 귤 수는 k개로 정해져 있으니, 크기 종류를 줄이려면 한 종류에서 되도록 많이 담아야 합니다.`,`크기별 개수를 세고, 개수가 많은 크기부터 통째로 담으며 k를 줄입니다. k가 0 이하가 될 때까지 쓴 크기 종류 수가 답입니다.`,`크기마다 귤 전체를 다시 훑으면 (귤 수 × 크기 종류 수)번이라 시간 초과입니다. 개수는 귤을 한 번만 훑어도 모두 셀 수 있습니다.`],demo:{input:[i,a],label:`k = 11, tangerine = [7, 3, 8, 5, 1, 7, 6, 8, 2, 5, 8, 7, 4, 6]`},workUnit:`귤이나 크기를 하나 살펴본 횟수`,approaches:[{id:`tangerine-sorted-counts`,name:`크기별 개수를 세고 많은 순으로 담기`,rank:`BEST`,timeComplexity:`O(N + U log U) (U = 크기 종류 수)`,spaceComplexity:`O(U)`,verdict:`크기별 개수를 한 번에 세고, 개수가 많은 크기부터 통째로 담아 k를 채우는 풀이입니다.`,pros:[`귤을 한 번만 훑어 개수를 세고, 정렬은 크기 종류 수만큼만 하므로 10만 개도 순식간입니다.`,`"많은 크기부터 담는다"는 그리디가 그대로 코드가 됩니다.`,`Counter나 Map만 알면 짧게 쓸 수 있습니다.`],cons:[`k가 0 이하가 되는 순간 멈추는 break를 빼먹으면 크기 종류 수를 잘못 셉니다.`,`개수를 세고 정렬하는 두 단계를 거칩니다.`],whyThisRank:`같은 k개를 채울 때 한 종류에서 더 많이 담을수록 종류 수가 줄어듭니다. 그래서 개수가 가장 많은 크기부터 담으면 어떤 다른 선택보다도 종류 수가 늘지 않습니다.`,code:h,visualize:X},{id:`tangerine-max-scan`,name:`남은 크기에서 가장 많은 것을 매번 찾기`,rank:`ALTERNATIVE`,timeComplexity:`O(N + m × U) (m = 담은 크기 수)`,spaceComplexity:`O(U)`,verdict:`정렬하지 않고, 상자가 찰 때까지 남은 크기 중 개수가 가장 많은 것을 매번 처음부터 찾아 담는 풀이입니다.`,pros:[`정렬 없이 최댓값 찾기만 알면 됩니다.`,`크기 종류가 적으면 정석과 비슷하게 빠릅니다.`],cons:[`담을 때마다 남은 크기를 모두 훑어, 크기 종류가 U개고 대부분 담아야 하면 O(U²)입니다.`,`크기 종류가 10만이면 최대 약 50억 번을 확인해 시간 초과가 날 수 있습니다.`],whyThisRank:`정렬 한 번이면 끝날 일을 담을 때마다 처음부터 최댓값을 다시 찾습니다. 같은 생각이지만 확인하는 횟수가 크기 종류 수의 제곱으로 늘어납니다.`,code:_,visualize:Z},{id:`tangerine-count-each`,name:`크기마다 귤 전체를 훑어 개수 세기`,rank:`TRAP`,trap:`slow`,timeComplexity:`O(N × U)`,spaceComplexity:`O(U)`,verdict:`크기 종류마다 귤 전체를 처음부터 끝까지 훑어 개수를 세는 풀이로, 답은 맞지만 귤이 많으면 시간 초과입니다.`,pros:[`count를 부르기만 하면 되어 코드가 가장 짧습니다.`,`귤이 적을 때는 답이 맞습니다.`],cons:[`크기 종류마다 귤 전체를 다시 훑습니다. 귤과 크기 종류가 모두 10만이면 약 100억 번입니다.`,`정렬과 담기는 정석과 같은데, 개수를 세는 한 줄이 전체 시간을 정합니다.`],whyThisRank:`개수는 귤을 한 번만 훑으면 모두 셀 수 있습니다. 크기마다 처음부터 다시 세는 순간, 이미 본 귤을 크기 종류 수만큼 반복해서 보게 됩니다.`,code:y,visualize:Q}],checks:{cases:[{args:[6,[1,3,2,5,4,5,2,3]],expected:3},{args:[4,[1,3,2,5,4,5,2,3]],expected:2},{args:[2,[1,1,1,1,2,2,2,3]],expected:1},{args:[1,[5]],expected:1},{args:[3,[3,3,3]],expected:1},{args:[4,[1,1,2,3]],expected:3},{args:[2,[1,2,3,4]],expected:2},{args:[5,[1,1,1,2,2,3]],expected:2},{args:[i,a],expected:5}],random:e=>{let t=1+Math.floor(e()*14);return[1+Math.floor(e()*t),Array.from({length:t},()=>1+Math.floor(e()*6))]}}};export{$ as default};
